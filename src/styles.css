@@ -317,3 +317,270 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .mini { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 4px 10px; border-radius: 3px; cursor: pointer; font-family: inherit; font-size: 12px; }
 .mini.ghost { background: transparent; }
 .mini:hover { border-color: var(--ember); }
+
+/* ============== Footer 反馈入口 ============== */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 14px 8px;
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.footer-link {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--gold);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 1px;
+  transition: all .2s;
+}
+.footer-link:hover {
+  border-style: solid;
+  border-color: var(--gold);
+  color: var(--ink);
+  background: rgba(217, 164, 65, 0.08);
+}
+.footer-link:active { transform: scale(0.98); }
+.footer-text { color: var(--muted); font-size: 12px; letter-spacing: .5px; }
+
+/* ============== 反馈弹窗 ============== */
+.feedback-modal { width: min(520px, 92vw); }
+.feedback-textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 100px;
+}
+.feedback-textarea:focus { outline: none; border-color: var(--ember); }
+.char-count { text-align: right; margin-top: 4px; }
+
+.form-row { margin: 12px 0; }
+.form-label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg-btn {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  flex: 1;
+  min-width: 80px;
+}
+.seg-btn:hover { color: var(--ink); border-color: var(--ember); }
+.seg-btn.on { color: var(--gold); border-color: var(--gold); background: rgba(217, 164, 65, 0.1); }
+
+.rating { display: flex; gap: 4px; }
+.star {
+  background: transparent;
+  border: none;
+  color: var(--line);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: inherit;
+  line-height: 1;
+  transition: color .15s;
+}
+.star.on { color: var(--gold); }
+.star:hover { color: var(--ember); }
+
+/* ============== 任务状态视觉一致性 ============== */
+.quest {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: var(--bg2);
+  transition: all .2s;
+}
+.quest.q-open {
+  border-left: 3px solid var(--gold);
+  background: rgba(217, 164, 65, 0.04);
+}
+.quest.q-open:hover { background: rgba(217, 164, 65, 0.08); }
+.quest.q-active {
+  border-left: 3px solid var(--ember);
+  background: rgba(224, 104, 47, 0.06);
+}
+.quest.q-done {
+  border-left: 3px solid var(--toxic);
+  background: rgba(143, 191, 90, 0.04);
+  opacity: 0.78;
+}
+.quest.q-done .q-head b {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.q-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.q-done-hint {
+  margin-top: 4px;
+  font-style: italic;
+}
+.q-methods { margin-top: 8px; }
+
+/* 状态 tag 视觉区分（颜色 + 图标 + 边框） */
+.tag.t-open {
+  background: rgba(217, 164, 65, 0.15);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+.tag.t-active {
+  background: rgba(224, 104, 47, 0.15);
+  color: var(--ember);
+  border: 1px solid var(--ember);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  animation: pulse-active 2s infinite;
+}
+.tag.t-done {
+  background: rgba(143, 191, 90, 0.15);
+  color: var(--toxic);
+  border: 1px solid var(--toxic);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+@keyframes pulse-active {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224, 104, 47, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(224, 104, 47, 0); }
+}
+
+/* 任务操作按钮：实色 primary、形状更突出 */
+button.mini {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  transition: all .15s;
+}
+button.mini:hover:not(:disabled) { border-color: var(--ember); color: var(--ember); }
+button.mini:disabled { opacity: 0.4; cursor: not-allowed; }
+button.mini.primary {
+  background: var(--ember);
+  color: #1a1410;
+  border: 1px solid var(--ember);
+  font-weight: bold;
+  padding: 8px 14px;
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--ember2);
+}
+button.mini.primary:hover:not(:disabled) {
+  background: var(--ember2);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 #8a2f1e;
+}
+button.mini.primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--ember2);
+}
+button.mini.primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* 区域按钮（前往）统一 primary 形状 */
+button.nav {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  transition: all .15s;
+}
+button.nav:hover:not(:disabled) { border-color: var(--toxic); color: var(--toxic); background: rgba(143, 191, 90, 0.05); }
+button.nav:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 区域操作按钮（搜寻、仔细搜寻、拨弄）—— ghost vs primary 区分 */
+button.act {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+button.act:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+button.act.ghost { background: transparent; color: var(--muted); }
+button.act.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--ink); }
+button.act:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 结局按钮 */
+button.end-btn {
+  background: var(--gold);
+  color: #1a1410;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  margin: 4px 0;
+}
+button.end-btn:hover:not(:disabled) { background: var(--ember); color: #fff; }
+button.end-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 对话选项 */
+button.dlg-opt {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+button.dlg-opt:hover { border-color: var(--ember); color: var(--ember); background: rgba(224, 104, 47, 0.08); }
+button.dlg-opt.ghost { color: var(--muted); }
+button.dlg-opt.primary { background: var(--ember); color: #1a1410; font-weight: bold; border-color: var(--ember); }
+button.dlg-opt.primary:hover { background: var(--ember2); color: #fff; }
+button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ============== 响应式：移动端 ============== */
+@media (max-width: 720px) {
+  .footer { padding: 16px 8px 4px; }
+  .footer-link { flex: 1; text-align: center; }
+  .feedback-modal { padding: 20px 16px; }
+  button.mini.primary { padding: 8px 12px; font-size: 12px; }
+  button.nav { padding: 6px 10px; font-size: 12px; }
+  .seg-btn { min-width: 60px; font-size: 12px; padding: 6px 8px; }
+}

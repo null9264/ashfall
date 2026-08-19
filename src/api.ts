@@ -28,6 +28,8 @@ export const api = {
   endingList: () => req('/api/ending'),
   endingChoose: (id: string) => req('/api/ending', 'POST', { id }),
   reset: () => req('/api/reset', 'POST') as Promise<ViewState>,
+  submitFeedback: (data: { category: string; message: string; rating?: number; meta?: any }) =>
+    req('/api/feedback', 'POST', data) as Promise<{ ok: true }>,
 };
 
 // ===== Admin =====
@@ -43,4 +45,14 @@ export const admin = {
     return req('/api/admin/events?' + p.toString());
   },
   players: (playerId?: string) => req('/api/admin/players' + (playerId ? '?player_id=' + encodeURIComponent(playerId) : '')),
+  feedback: (q: { category?: string; status?: string; limit?: number } = {}) => {
+    const p = new URLSearchParams();
+    if (q.category) p.set('category', q.category);
+    if (q.status) p.set('status', q.status);
+    if (q.limit) p.set('limit', String(q.limit));
+    const qs = p.toString();
+    return req('/api/admin/feedback' + (qs ? '?' + qs : ''));
+  },
+  feedbackUpdate: (id: number, status: 'new' | 'read' | 'archived') =>
+    req('/api/admin/feedback', 'POST', { id, status }) as Promise<{ ok: true }>,
 };

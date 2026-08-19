@@ -40,7 +40,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export default function AdminApp() {
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<'overview' | 'events' | 'players'>('overview');
+  const [tab, setTab] = useState<'overview' | 'events' | 'players' | 'feedback'>('overview');
 
   useEffect(() => {
     // 试探：随便请求一次事件列表，能通则说明已登录
@@ -58,6 +58,7 @@ export default function AdminApp() {
           <button className={tab === 'overview' ? 'on' : ''} onClick={() => setTab('overview')}>总览</button>
           <button className={tab === 'events' ? 'on' : ''} onClick={() => setTab('events')}>事件流</button>
           <button className={tab === 'players' ? 'on' : ''} onClick={() => setTab('players')}>玩家</button>
+          <button className={tab === 'feedback' ? 'on' : ''} onClick={() => setTab('feedback')}>反馈</button>
         </nav>
         <button className="mini ghost" onClick={async () => { await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }); location.href = '/'; }}>退出</button>
       </header>
@@ -65,6 +66,7 @@ export default function AdminApp() {
         {tab === 'overview' && <Overview />}
         {tab === 'events' && <Events />}
         {tab === 'players' && <Players />}
+        {tab === 'feedback' && <FeedbackTab />}
       </main>
     </div>
   );
@@ -262,6 +264,101 @@ function Kpi({ label, v, sub }: { label: string; v: number; sub?: string }) {
       <div className="kpi-v">{v.toLocaleString()}</div>
       <div className="kpi-label">{label}</div>
       {sub && <div className="kpi-sub">{sub}</div>}
+    </div>
+  );
+}
+const CAT_LABEL: Record<string, string> = {
+  bug: '🐞 Bug', suggestion: '💡 建议', praise: '✨ 赞美', other: '📝 其他',
+};
+const STATUS_LABEL: Record<string, string> = {
+  new: '新', read: '已读', archived: '已归档',
+};
+
+function FeedbackTab() {
+  const [list, setList] = useState<any>(null);
+  const [cat, setCat] = useState('');
+  const [status, setStatus] = useState('');
+  const reload = useCallback(() => {
+    admin.feedback({ category: cat || undefined, status: status || undefined, limit: 200 })
+      .then(setList);
+  }, [cat, status]);
+  useEffect(() => { reload(); }, [reload]);
+
+  const updateStatus = async (id: number, s: 'new' | 'read' | 'archived') => {
+    await admin.feedbackUpdate(id, s);
+    reload();
+  };
+
+  if (!list) return <div className="loading">载入反馈…</div>;
+  const total = list.feedback.length;
+  const newCount = list.newCount;
+
+  return (
+    <div className="feedback-tab">
+      <div className="kpis">
+        <Kpi label="反馈总数" v={total} sub="近 200 条" />
+        <Kpi label="待处理" v={newCount} sub="status=new" />
+        <Kpi label="类别" v={list.catDist.length} sub="已收到" />
+      </div>
+      <section className="chart-card">
+        <h3>类别分布</h3>
+        <div className="pie-list">
+          {list.catDist.length === 0 && <p className="muted small">暂无反馈</p>}
+          {list.catDist.map((c: any) => (
+            <div className="pie-row" key={c.category}>
+              <span className="pie-name">{CAT_LABEL[c.category] || c.category}</span>
+              <span className="pie-bar"><i style={{ width: (c.c / Math.max(1, total) * 100) + '%' }} /></span>
+              <span className="pie-v">{c.c}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="filters">
+        <select value={cat} onChange={(e) => setCat(e.target.value)}>
+          <option value="">全部类别</option>
+          <option value="bug">🐞 Bug</option>
+          <option value="suggestion">💡 建议</option>
+          <option value="praise">✨ 赞美</option>
+          <option value="other">📝 其他</option>
+        </select>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">全部状态</option>
+          <option value="new">新</option>
+          <option value="read">已读</option>
+          <option value="archived">已归档</option>
+        </select>
+        <button onClick={reload}>刷新</button>
+      </div>
+
+      <div className="fb-list">
+        {list.feedback.length === 0 && <p className="muted small center">暂无反馈</p>}
+        {list.feedback.map((f: any) => (
+          <div key={f.id} className={'fb-card s-' + f.status}>
+            <div className="fb-head">
+              <span className="fb-id">#{f.id}</span>
+              <span className={'cat-tag c-' + f.category}>{CAT_LABEL[f.category] || f.category}</span>
+              {f.rating && <span className="fb-rating">{'★'.repeat(f.rating)}</span>}
+              <span className="fb-by">
+                {f.nickname || <code>{f.player_id.slice(0, 8)}…</code>}
+              </span>
+              <span className="fb-time">{new Date(f.created_at).toLocaleString()}</span>
+              <span className={'tag s-tag-' + f.status}>{STATUS_LABEL[f.status]}</span>
+            </div>
+            <div className="fb-body">{f.message}</div>
+            {f.meta && (
+              <div className="fb-meta small muted">
+                {(() => { try { return JSON.stringify(JSON.parse(f.meta)); } catch { return f.meta; } })()}
+              </div>
+            )}
+            <div className="fb-actions">
+              {f.status !== 'read' && <button className="mini" onClick={() => updateStatus(f.id, 'read')}>标记已读</button>}
+              {f.status !== 'archived' && <button className="mini" onClick={() => updateStatus(f.id, 'archived')}>归档</button>}
+              {f.status !== 'new' && <button className="mini ghost" onClick={() => updateStatus(f.id, 'new')}>重置为新</button>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
