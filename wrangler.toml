@@ -1,0 +1,10 @@
+name = "ashfall"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# 部署前请先执行：wrangler d1 create ashfall
+# 然后把生成的 id 填到下面的 database_id
+[[d1_databases]]
+binding = "DB"
+database_name = "ashfall"
+database_id = "REPLACE_WITH_D1_ID"
