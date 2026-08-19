@@ -1,69 +1,80 @@
-# 部署到 Cloudflare Pages(小白级指引)
+# Cloudflare Pages 部署说明
 
-沙盒已经验证:此工程能**直接部署到 Cloudflare Pages**,无需 GitHub,无需信用卡。
+## 方式一：Git 集成（推荐，推送即部署）
 
-## 为什么选 Cloudflare?
+### 步骤 1：Dashboard 绑定 GitHub
 
-- 国内访问比 Vercel/GitHub Pages 稳得多
-- D1(SQLite)免费配额足够中小游戏
-- 免费子域 `*.pages.dev` 即可上线,绑定自有域名更稳
-- 沙盒已经实测 `cloudflare.com / api.cloudflare.com / pages.dev` 在国内出网可达
-- `wrangler` 可从 npm 镜像安装,**不需要 GitHub**
+1. 打开 https://dash.cloudflare.com/
+2. 左侧 **Workers & Pages** → 选中 `ashfall` 项目
+3. **Settings** → **Builds** → **Connect to Git**
+4. 选择 **GitHub** → 授权（首次跳转）
+5. 选仓库：**null9264/ashfall** / 分支：**main**
 
-## 准备(你需要做的,5 分钟)
+### 步骤 2：构建配置
 
-### 1. 注册 Cloudflare
+| 配置项 | 值 |
+|---|---|
+| Framework preset | Vite |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Root directory | (留空) |
 
-1. 打开 https://dash.cloudflare.com/sign-up
-2. 推荐 **Continue with Google**(最快,无需信用卡)
-3. 登录后会在 dashboard 顶部看到一个默认账号
+### 步骤 3：确认 D1 绑定
 
-### 2. 生成 API Token
+**Settings** → **Functions** → **D1 database bindings**：
 
-1. 打开 https://dash.cloudflare.com/profile/api-tokens
-2. 点 **Create Token → Edit Cloudflare Pages** 模板(或选 Custom Token,授予 `Pages: Edit` + `D1: Edit` + `Account: Read`)
-3. 点 **Continue to summary → Create Token**
-4. **复制生成的 token**(以一长串字符形式呈现,只显示一次)
+| Variable name | D1 database |
+|---|---|
+| `DB` | `ashfall-db` (id: `c5cf2d50-a387-4195-bb16-334dc52b33b7`) |
 
-### 3. (可选,推荐)注册一个你自己的域名
+### 步骤 4：触发首次部署
 
-国内想百分百稳定访问,绑一个域名(几十元/年)。
+回到 **Deployments** → **Create deployment** → **Branch: main** → **Deploy**。
 
-- 万网/腾讯云/阿里云都可以买
-- 买完后在 Cloudflare 添加站点,按提示改 NS 记录
-- 沙盒里 AI 部署时直接绑这个域名
+完成后日志里看到 `✓ Compiled successfully` 就成功。
 
-## 部署(交给 AI 一步搞定)
+---
 
-把以下两样发到对话里:
-
-```
-CLOUDFLARE_API_TOKEN=你的token
-DOMAIN=你的域名(可选,不带也可以,系统会给你 *.pages.dev)
-```
-
-AI 会自动执行:
+## 之后更新代码
 
 ```bash
-npx wrangler d1 create ashfall-db
-npx wrangler d1 migrations apply ashfall-db --remote
-npx wrangler pages deploy dist --project-name ashfall
-# 绑域名(若有)
+git add -A
+git commit -m "描述"
+git push origin main
 ```
 
-部署成功后会返回一个 URL,如 `https://ashfall.pages.dev`,这个链接**你的朋友直接打开就能玩**。
+Git push 后 Cloudflare 自动构建，约 2-3 分钟上线。
 
-## 部署后管理
+---
 
-- Cloudflare Dashboard → Pages → ashfall → 看到部署历史
-- D1 数据库可在 Workers & Pages → D1 → ashfall-db 管理
-- 改完代码后,AI 跑一遍上面命令即可重新部署
+## 方式二：手动上传（备用）
+
+如果不接 Git，可以本地 build 后拖拽 dist/ 到 Dashboard：
+
+```bash
+npm install
+npm run build
+# 把 dist/ 整个文件夹拖到 Cloudflare Dashboard → Pages → ashfall → Upload
+```
+
+---
+
+## 验收清单
+
+部署成功后验证：
+
+| URL | 期望 |
+|---|---|
+| `https://ashfall-6mr.pages.dev/` | 首屏输入昵称进游戏 |
+| `https://ashfall-6mr.pages.dev/#/admin-de151e977f2564132a767db5` | 后台登录页 |
+| `https://ashfall-6mr.pages.dev/api/state` | 返回 `{"area":{"id":"gate"},"nickname":null,...}` |
+| 页面底部 | "💬 反馈建议" 链接 |
+| 后台"反馈"Tab | 看到玩家反馈列表 |
 
 ## 故障排查
 
 | 症状 | 原因 | 解法 |
 |---|---|---|
-| `Authentication error [code: 10000]` | token 错误或过期 | 重新生成 token |
-| `d1: DATABASE_NOT_FOUND` | 没建库或 migration 没跑 | 跑迁移命令 |
-| 部署成功但打开 404 | `dist/` 为空(本地未 build) | 先 `npm run build` 再部署 |
-| 国内访问偶尔慢 | `pages.dev` 偶发不稳 | 绑自有域名 |
+| Build failed: `Cannot find module` | 依赖没装 | 检查 build 是否跑了 `npm install`（Vite 模板默认会） |
+| Functions 404 | D1 没绑定 | 检查 Settings → Functions → D1 bindings |
+| 部署成功但首屏空白 | SPA 路由问题 | 已配置 `_redirects`，重部署即可 |

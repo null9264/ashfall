@@ -30,14 +30,15 @@ npm run dev
 
 ## 部署
 
-详见 [DEPLOY.md](./DEPLOY.md)。推荐 Cloudflare Pages(国内访问比 Vercel 稳得多),需:
+详见 [DEPLOY.md](./DEPLOY.md)。**两种方式**：
 
-1. 注册 Cloudflare(免费、无需信用卡)
-2. 生成 API Token
-3. 在 Cloudflare 控制台创建 D1 数据库 + 应用迁移
-4. 把 token 交给 AI 或自己用 `wrangler pages deploy` 部署
+### 方式 A：Git 集成（推荐，推送即部署）
+1. Cloudflare Dashboard → `ashfall` → **Settings** → **Builds** → **Connect to Git** → GitHub → `null9264/ashfall` / `main`
+2. 框架 Vite，Build command `npm run build`，Output `dist`
+3. 触发首次 Deploy，之后 `git push` 即自动上线
 
-游戏代码本身只依赖 Cloudflare 生态,**无需 GitHub** 即可部署。
+### 方式 B：手动上传 / wrangler deploy
+适合不接 Git 的情况。需 API Token。
 
 ## 防作弊说明
 
