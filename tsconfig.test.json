@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
@@ -11,11 +11,17 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "jsx": "react-jsx",
     "types": ["@cloudflare/workers-types", "node"],
     "baseUrl": ".",
     "paths": {
       "@lib/*": ["functions/lib/*"]
     }
   },
-  "include": ["functions/lib/**/*", "functions/api/**/*", "tests/unit/**/*", "functions/_ambient.d.ts"]
+  "include": [
+    "functions/lib/**/*",
+    "functions/api/**/*",
+    "tests/unit/**/*",
+    "functions/_ambient.d.ts"
+  ]
 }

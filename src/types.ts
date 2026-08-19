@@ -7,7 +7,7 @@ export interface AttrChanges {
 
 // v2.0.2: 数值历史面板 — 来自 /api/player/history 的扁平条目
 export interface HistoryEntry {
-  type: 'move' | 'pickup' | 'quest_accept' | 'quest_complete' | 'hidden' | 'ending' | 'reset' | 'nickname' | 'login' | 'hint';
+  type: 'move' | 'pickup' | 'talk' | 'quest_accept' | 'quest_complete' | 'hidden' | 'ending' | 'reset' | 'nickname' | 'login' | 'hint';
   ref: string | null;
   meta: Record<string, any>;
   created_at: number;
