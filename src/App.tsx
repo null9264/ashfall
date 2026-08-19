@@ -197,7 +197,10 @@ function NicknameGate({ onDone }: { onDone: () => void }) {
     try {
       await api.setNickname(v);
       onDone();
-    } catch (e: any) { setErr(e?.message || '设置失败'); }
+    } catch (e: any) {
+      console.error('[nickname]', e);
+      setErr(e?.message || '设置失败');
+    }
     finally { setBusy(false); }
   };
   return (

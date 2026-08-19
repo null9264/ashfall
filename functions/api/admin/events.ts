@@ -2,6 +2,11 @@
 import { json, bad } from '../../lib/util';
 import { isAdmin, parseCookieToken } from '../../lib/admin';
 
+const VALID_TYPES = new Set([
+  'move', 'talk', 'pickup', 'quest_accept', 'quest_complete',
+  'hidden', 'ending', 'reset', 'nickname', 'login',
+]);
+
 export async function onRequestGet(context: any) {
   const token = parseCookieToken(context.request);
   if (!(await isAdmin(context.env.DB, token))) return bad('需要管理员登录', 401);
@@ -13,6 +18,14 @@ export async function onRequestGet(context: any) {
   const untilStr = url.searchParams.get('until');
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10), 500);
 
+  // 类型白名单校验（防拼错/防注入异常值）
+  if (type && !VALID_TYPES.has(type)) return bad(`无效事件类型: ${type}`, 400);
+  // 时间参数必须可解析为数字
+  const since = sinceStr ? parseInt(sinceStr, 10) : null;
+  const until = untilStr ? parseInt(untilStr, 10) : null;
+  if (sinceStr && (isNaN(since as any) || (since as any) < 0)) return bad('since 必须是正整数时间戳', 400);
+  if (untilStr && (isNaN(until as any) || (until as any) < 0)) return bad('until 必须是正整数时间戳', 400);
+
   const where: string[] = [];
   const args: any[] = [];
   if (type) { where.push('e.type = ?'); args.push(type); }
@@ -20,8 +33,8 @@ export async function onRequestGet(context: any) {
     where.push('n.nickname = ?');
     args.push(nickname);
   }
-  if (sinceStr) { where.push('e.created_at >= ?'); args.push(parseInt(sinceStr, 10)); }
-  if (untilStr) { where.push('e.created_at <= ?'); args.push(parseInt(untilStr, 10)); }
+  if (since !== null) { where.push('e.created_at >= ?'); args.push(since); }
+  if (until !== null) { where.push('e.created_at <= ?'); args.push(until); }
 
   const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
   const sql = `

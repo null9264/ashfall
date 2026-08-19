@@ -4,7 +4,9 @@ import type { D1Database } from '@cloudflare/workers-types';
 const NICK_RE = /^[\p{L}\p{N}_-]{2,16}$/u;
 
 export function isValidNickname(s: string): boolean {
-  return NICK_RE.test(s);
+  if (!NICK_RE.test(s)) return false;
+  // 用码点计数（避免 emoji 多字符突破长度限制）
+  return Array.from(s).length <= 16;
 }
 
 export async function getNickname(DB: D1Database, player_id: string): Promise<string | null> {

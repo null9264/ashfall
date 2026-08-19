@@ -7,6 +7,7 @@ export function viewState(s: PlayerState, nickname: string | null = null) {
   const area = AREAS[s.area];
   const endings = evaluateEndings(s);
   return {
+    nickname,
     area: {
       id: area.id, name: area.name, desc: area.desc, danger: area.danger ?? 0,
       neighbors: area.neighbors.map((id) => ({ id, name: AREAS[id].name })),

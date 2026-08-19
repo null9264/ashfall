@@ -162,6 +162,17 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   padding: 4px 10px;
   font-size: 14px;
   color: var(--gold);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.gate-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  background: var(--ember2);
 }
 
 /* ============== Admin 后台 ============== */
