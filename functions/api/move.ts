@@ -2,6 +2,7 @@ import { getState, saveState } from '../lib/db';
 import { canEnterArea, applyMove } from '../lib/rules';
 import { viewState } from '../lib/view';
 import { json, bad } from '../lib/util';
+import { logEvent } from '../lib/events';
 import type { AreaId } from '../lib/types';
 
 export async function onRequestPost(context: any) {
@@ -11,7 +12,9 @@ export async function onRequestPost(context: any) {
   const s = await getState(context.env.DB, context.data.playerId);
   const chk = canEnterArea(s, area);
   if (!chk.ok) return bad(chk.reason || '无法前往');
+  const from = s.area;
   applyMove(s, area);
   await saveState(context.env.DB, s);
+  await logEvent(context.env.DB, context.data.playerId, 'move', String(area), { from });
   return json(viewState(s));
 }

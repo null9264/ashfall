@@ -2,6 +2,7 @@ import { getState, saveState } from '../lib/db';
 import { triggerHidden, checkHidden } from '../lib/rules';
 import { viewState } from '../lib/view';
 import { json, bad } from '../lib/util';
+import { logEvent } from '../lib/events';
 import { HIDDENS } from '../lib/content';
 
 export async function onRequestPost(context: any) {
@@ -22,5 +23,6 @@ export async function onRequestPost(context: any) {
   if (!checkHidden(s, hiddenId)) return bad(h.hint + '（条件还不够）');
   triggerHidden(s, hiddenId);
   await saveState(context.env.DB, s);
+  await logEvent(context.env.DB, context.data.playerId, 'hidden', String(hiddenId));
   return json({ ...viewState(s), found: h.name });
 }

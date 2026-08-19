@@ -1,6 +1,7 @@
 import { getState, saveState } from '../lib/db';
 import { evaluateEndings } from '../lib/rules';
 import { json, bad } from '../lib/util';
+import { logEvent } from '../lib/events';
 import { ENDINGS } from '../lib/content';
 
 // GET：列出当前可达成 / 未达成的结局
@@ -24,5 +25,6 @@ export async function onRequestPost(context: any) {
   s.ending = id;
   s.finished_at = Date.now();
   await saveState(context.env.DB, s);
+  await logEvent(context.env.DB, context.data.playerId, 'ending', String(id));
   return json({ ending: ENDINGS[id] });
 }

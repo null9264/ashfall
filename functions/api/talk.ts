@@ -1,6 +1,7 @@
 import { getState, saveState } from '../lib/db';
 import { getDialogNode, applyDialogChoice } from '../lib/rules';
 import { json, bad } from '../lib/util';
+import { logEvent } from '../lib/events';
 import { NPCS } from '../lib/content';
 
 export async function onRequestPost(context: any) {
@@ -23,6 +24,7 @@ export async function onRequestPost(context: any) {
   // 选择选项：执行服务端效果，返回下一节点或关闭
   const { next } = applyDialogChoice(s, npc, node || def.start, Number(choice));
   await saveState(context.env.DB, s);
+  await logEvent(context.env.DB, context.data.playerId, 'talk', String(npc), { node: node || def.start, choice: Number(choice) });
   if (next) {
     const view = getDialogNode(s, npc, next);
     return json({ npc, node: next, ...view });

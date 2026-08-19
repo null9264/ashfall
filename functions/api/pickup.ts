@@ -2,6 +2,7 @@ import { getState, saveState } from '../lib/db';
 import { addItem } from '../lib/rules';
 import { viewState } from '../lib/view';
 import { json, bad } from '../lib/util';
+import { logEvent } from '../lib/events';
 import { AREAS, ITEMS } from '../lib/content';
 
 export async function onRequestPost(context: any) {
@@ -16,11 +17,13 @@ export async function onRequestPost(context: any) {
     if (!pickups.includes(body.item)) return bad('这里捡不到这个');
     addItem(s, body.item, 1);
     await saveState(context.env.DB, s);
+    await logEvent(context.env.DB, context.data.playerId, 'pickup', String(body.item));
     return json({ ...viewState(s), picked: ITEMS[body.item].name });
   }
 
   // 未指定：捡当前区域所有可捡物各一个
   for (const it of pickups) addItem(s, it, 1);
   await saveState(context.env.DB, s);
+  await logEvent(context.env.DB, context.data.playerId, 'pickup', null, { items: pickups });
   return json({ ...viewState(s), picked: pickups.map((i) => ITEMS[i].name).join('、') });
 }

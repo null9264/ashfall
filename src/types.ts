@@ -1,5 +1,6 @@
 // 前端只描述「服务端返回的视图」，不持有任何游戏判定逻辑
 export interface ViewState {
+  nickname?: string | null;
   area: { id: string; name: string; desc: string; danger: number; neighbors: { id: string; name: string }[] };
   unlockedAreas: string[];
   attrs: { hp: number; stamina: number; radiation: number; reputation: number; scrap: number };

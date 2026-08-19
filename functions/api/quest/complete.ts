@@ -1,7 +1,8 @@
-import { getState, saveState } from '../lib/db';
-import { canCompleteQuest, completeQuest } from '../lib/rules';
-import { viewState } from '../lib/view';
-import { json, bad } from '../lib/util';
+import { getState, saveState } from '../../lib/db';
+import { canCompleteQuest, completeQuest } from '../../lib/rules';
+import { viewState } from '../../lib/view';
+import { json, bad } from '../../lib/util';
+import { logEvent } from '../../lib/events';
 
 export async function onRequestPost(context: any) {
   const body = await context.request.json().catch(() => ({}));
@@ -13,5 +14,6 @@ export async function onRequestPost(context: any) {
   }
   completeQuest(s, questId, methodId);
   await saveState(context.env.DB, s);
+  await logEvent(context.env.DB, context.data.playerId, 'quest_complete', String(questId), { methodId });
   return json(viewState(s));
 }

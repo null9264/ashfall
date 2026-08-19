@@ -20,6 +20,8 @@ export default function App() {
   }, []);
 
   if (!view) return <div className="loading">载入废土中…</div>;
+  // 首次进入：未设置昵称 → 强制设置
+  if (!view.nickname) return <NicknameGate onDone={refresh} />;
   if (view.ending && view.endingDetail)
     return <Ending detail={view.endingDetail} onReset={() => act(async () => api.reset())} />;
 
@@ -41,6 +43,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">灰烬城 <span>· ASHFALL</span></div>
+        <div className="who">{view.nickname && <span className="nick">@{view.nickname}</span>}</div>
         <div className="stats">
           <Stat label="生命" v={a.hp} max={100} cls="hp" />
           <Stat label="辐射" v={a.radiation} max={100} cls="rad" />
@@ -178,6 +181,42 @@ function Ending({ detail, onReset }: { detail: NonNullable<ViewState['endingDeta
           {detail.passages.map((p, i) => <p key={i} className="fade" style={{ animationDelay: i * 0.3 + 's' }}>{p}</p>)}
         </div>
         <button className="end-btn" onClick={onReset}>重新走入灰烬城</button>
+      </div>
+    </div>
+  );
+}
+
+function NicknameGate({ onDone }: { onDone: () => void }) {
+  const [val, setVal] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const submit = async () => {
+    const v = val.trim();
+    if (!v) { setErr('给自己起个名号'); return; }
+    setBusy(true); setErr('');
+    try {
+      await api.setNickname(v);
+      onDone();
+    } catch (e: any) { setErr(e?.message || '设置失败'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="gate-screen">
+      <div className="gate-inner">
+        <h1 className="gate-title">灰烬城 · 入城登记</h1>
+        <p className="gate-sub">在你的记忆被归档之前，请先告诉记录者你是谁。</p>
+        <p className="gate-sub small muted">昵称须 2-16 位（中文 / 字母 / 数字 / 下划线 / 短横线），全城唯一。</p>
+        <input
+          className="gate-input"
+          placeholder="例如：旧城守夜人"
+          value={val}
+          maxLength={16}
+          autoFocus
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+        />
+        {err && <p className="gate-err">{err}</p>}
+        <button className="gate-btn" disabled={busy} onClick={submit}>{busy ? '登记中…' : '推开城门'}</button>
       </div>
     </div>
   );
