@@ -1,20 +1,33 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, getSavedNickname, setSavedNickname } from './api';
-import type { ViewState, DialogView } from './types';
+import type { ViewState, DialogView, HistoryEntry, ClueEntry } from './types';
+
+type ToastCls = '' | 'good' | 'bad' | 'warn' | 'secret';
+
+const ATTR_LABEL: Record<string, string> = {
+  hp: '生命', stamina: '体力', radiation: '辐射', reputation: '声望', scrap: '废料',
+};
 
 export default function App() {
   const [view, setView] = useState<ViewState | null>(null);
   const [dialog, setDialog] = useState<DialogView | null>(null);
   const [toast, setToast] = useState('');
+  const [toastCls, setToastCls] = useState<ToastCls>('');
   const [busy, setBusy] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  // 用 ref 标记是否已经做过首次 state 拉取，避免 React StrictMode 双调用触发副作用
+  const [showStatsPanel, setShowStatsPanel] = useState(false);
+  const [showCluesPanel, setShowCluesPanel] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
+  const [clues, setClues] = useState<ClueEntry[] | null>(null);
+  const [panelBusy, setPanelBusy] = useState(false);
+  // 用 ref 标记是否已经做过首次 state 拉取,避免 React StrictMode 双调用触发副作用
   const inited = useRef(false);
+  const lastToastKey = useRef('');
 
   const refresh = useCallback(async () => {
     const v = await api.state();
-    // 即便服务端这一次的响应里 nickname 字段恰好为 null（兼容老版本/防回归），
-    // 也能从我们之前持久化的 localStorage 兜底拉回来，绝不再次进入登记门
+    // 即便服务端这一次的响应里 nickname 字段恰好为 null(兼容老版本/防回归),
+    // 也能从我们之前持久化的 localStorage 兜底拉回来,绝不再次进入登记门
     if (!v.nickname) {
       const cached = getSavedNickname();
       if (cached) v.nickname = cached;
@@ -29,15 +42,68 @@ export default function App() {
     refresh();
   }, [refresh]);
 
-  const toastMsg = (m: string) => { setToast(m); setTimeout(() => setToast(''), 2400); };
+  const toastMsg = (m: string, cls: ToastCls = '', key?: string) => {
+    // 简单 dedupe: 同 key 且未消失时不覆盖
+    if (key && lastToastKey.current === key) return;
+    if (key) lastToastKey.current = key;
+    setToast(m);
+    setToastCls(cls);
+    setTimeout(() => {
+      setToast('');
+      setToastCls('');
+      lastToastKey.current = '';
+    }, 2600);
+  };
+
+  // v2.0.2: 把后端 changes 转换成连续 toast(数值变化反馈)
+  const popChangeToasts = (v: ViewState) => {
+    const c = v.changes;
+    if (!c) return;
+    let i = 0;
+    const attrKeys = Object.keys(c.attr || {});
+    for (const k of attrKeys) {
+      const delta = c.attr[k];
+      if (delta === 0) continue;
+      const sign = delta > 0 ? '+' : '';
+      const cls: ToastCls = delta > 0 ? 'good' : 'bad';
+      const label = ATTR_LABEL[k] ?? k;
+      setTimeout(
+        () => toastMsg(`[${label}] ${sign}${delta}`, cls, `attr-${k}-${delta}`),
+        i++ * 600,
+      );
+    }
+    for (const a of c.item?.added ?? [])
+      setTimeout(() => toastMsg(`+ ${a}`, 'good', `item+${a}`), i++ * 600);
+    for (const r of c.item?.removed ?? [])
+      setTimeout(() => toastMsg(`- ${r}`, 'warn', `item-${r}`), i++ * 600);
+    for (const f of c.flags ?? []) {
+      if (typeof f === 'string' && f.startsWith('hidden:')) {
+        const id = f.slice('hidden:'.length);
+        setTimeout(
+          () => toastMsg(`发现隐藏:${id}`, 'secret', `flag-${f}`),
+          i++ * 600,
+        );
+      }
+    }
+  };
+
   const busyRef = useRef(false);
   const act = useCallback(async (fn: () => Promise<ViewState | void>) => {
-    if (busyRef.current) return; // 重入保护：网络慢时双击不重复请求
+    if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
-    try { const v = await fn(); if (v) setView(v); }
-    catch (e: any) { toastMsg(e?.message || '操作失败'); }
-    finally { busyRef.current = false; setBusy(false); }
+    try {
+      const v = await fn();
+      if (v) {
+        setView(v);
+        popChangeToasts(v);
+      }
+    } catch (e: any) {
+      toastMsg(e?.message || '操作失败', 'bad');
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }, []);
 
   if (!view) return <div className="loading">载入废土中…</div>;
@@ -58,6 +124,25 @@ export default function App() {
       if (r.closed) { setDialog(null); await refresh(); }
       else setDialog(r);
     } catch (e: any) { toastMsg(e?.message || '无法继续'); }
+  };
+
+  const openStatsPanel = async () => {
+    setShowStatsPanel(true);
+    if (!history) {
+      setPanelBusy(true);
+      try { const r = await api.history(120); setHistory(r.entries); }
+      catch (e: any) { toastMsg(e?.message || '历史拉取失败', 'bad'); }
+      finally { setPanelBusy(false); }
+    }
+  };
+  const openCluesPanel = async () => {
+    setShowCluesPanel(true);
+    if (!clues) {
+      setPanelBusy(true);
+      try { const r = await api.clues(); setClues(r.clues); }
+      catch (e: any) { toastMsg(e?.message || '线索拉取失败', 'bad'); }
+      finally { setPanelBusy(false); }
+    }
   };
 
   const a = view.attrs;
@@ -177,6 +262,12 @@ export default function App() {
 
       {/* 底部反馈入口 */}
       <footer className="footer">
+        <button className="footer-link" onClick={openStatsPanel}>
+          📊 数值记录
+        </button>
+        <button className="footer-link" onClick={openCluesPanel}>
+          🔖 线索日志
+        </button>
         <button className="footer-link" onClick={() => setShowFeedback(true)}>
           📬 反馈意见
         </button>
@@ -187,8 +278,25 @@ export default function App() {
         <FeedbackModal
           view={view}
           onClose={() => setShowFeedback(false)}
-          onSuccess={() => { setShowFeedback(false); toastMsg('已收到反馈，谢谢。'); }}
-          onError={(m) => toastMsg(m)}
+          onSuccess={() => { setShowFeedback(false); toastMsg('已收到反馈，谢谢。', 'good'); }}
+          onError={(m) => toastMsg(m, 'bad')}
+        />
+      )}
+
+      {showStatsPanel && (
+        <StatsPanel
+          view={view}
+          entries={history}
+          loading={panelBusy}
+          onClose={() => setShowStatsPanel(false)}
+        />
+      )}
+
+      {showCluesPanel && (
+        <CluesPanel
+          clues={clues}
+          loading={panelBusy}
+          onClose={() => setShowCluesPanel(false)}
         />
       )}
 
@@ -207,7 +315,7 @@ export default function App() {
         </div>
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      {toast && <div className={'toast ' + toastCls}>{toast}</div>}
     </div>
   );
 }
@@ -347,6 +455,141 @@ function NicknameGate({ onDone }: { onDone: () => void }) {
         />
         {err && <p className="gate-err">{err}</p>}
         <button className="gate-btn" disabled={busy} onClick={submit}>{busy ? '登记中…' : '推开城门'}</button>
+      </div>
+    </div>
+  );
+}
+
+// v2.0.2: 数值记录面板
+const HISTORY_TYPE_LABEL: Record<string, string> = {
+  move: '移动', pickup: '拾取', quest_accept: '接取任务',
+  quest_complete: '完成任务', hidden: '隐藏发现', ending: '结局',
+  reset: '重来', nickname: '登记', login: '登录',
+};
+function fmtTime(ts: number): string {
+  try {
+    const d = new Date(ts);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch { return String(ts); }
+}
+function summarizeEntry(e: HistoryEntry): string {
+  const m = e.meta || {};
+  switch (e.type) {
+    case 'move': return m.from ? `从 ${m.from} → ${m.to || e.ref}` : (e.ref || '移动');
+    case 'pickup': return `${m.name || e.ref || '物品'} ×${m.qty ?? 1}`;
+    case 'quest_accept': return `${m.name || e.ref || '任务'}`;
+    case 'quest_complete': {
+      const attr = m.attr ? Object.entries(m.attr).map(([k, v]) => `${ATTR_LABEL[k] || k} ${v as number > 0 ? '+' : ''}${v}`).join(' / ') : '';
+      return `${m.name || e.ref || '任务'}${attr ? `  ·  ${attr}` : ''}`;
+    }
+    case 'hidden': return `${m.name || e.ref || '隐藏要素'}（${m.area || ''}）`;
+    case 'ending': return m.title || e.ref || '结局';
+    case 'reset': return '重置了世界';
+    case 'nickname': return `起名 @${e.ref || m.nickname || ''}`;
+    case 'login': return '登入';
+    default: return e.ref || e.type;
+  }
+}
+
+function StatsPanel({ view, entries, loading, onClose }: {
+  view: ViewState; entries: HistoryEntry[] | null; loading: boolean; onClose: () => void;
+}) {
+  const a = view.attrs;
+  return (
+    <div className="modal" onClick={onClose}>
+      <div className="modal-box stats-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="speaker">📊 数值记录</div>
+        <p className="dialog-text small muted">声望、生命、辐射当前值，以及最近 120 条行为记录。</p>
+
+        <div className="stats-current">
+          <div className="stats-row">
+            <span className="stats-name">生命</span>
+            <span className="stat-bar big"><i className="hp" style={{ width: Math.max(0, Math.min(100, a.hp)) + '%' }} /></span>
+            <span className="stats-v">{a.hp}</span>
+          </div>
+          <div className="stats-row">
+            <span className="stats-name">辐射</span>
+            <span className="stat-bar big"><i className="rad" style={{ width: Math.max(0, Math.min(100, a.radiation)) + '%' }} /></span>
+            <span className="stats-v">{a.radiation}</span>
+          </div>
+          <div className="stats-row">
+            <span className="stats-name">声望</span>
+            <span className="stat-bar big"><i className="rep" style={{ width: Math.max(0, Math.min(100, (a.reputation / 50) * 100)) + '%' }} /></span>
+            <span className="stats-v">{a.reputation}</span>
+          </div>
+          <div className="stats-row">
+            <span className="stats-name">体力</span>
+            <span className="stat-bar big"><i className="sta" style={{ width: Math.max(0, Math.min(100, a.stamina)) + '%' }} /></span>
+            <span className="stats-v">{a.stamina}</span>
+          </div>
+          <div className="stats-row">
+            <span className="stats-name">废料</span>
+            <span className="stat-bar big"><i className="scr" style={{ width: Math.max(0, Math.min(100, a.scrap)) + '%' }} /></span>
+            <span className="stats-v">{a.scrap}</span>
+          </div>
+        </div>
+
+        <h3 style={{ marginTop: 18 }}>历史记录</h3>
+        {loading && <p className="muted small">载入中…</p>}
+        {!loading && (!entries || entries.length === 0) && <p className="muted small">还没有任何行动记录。</p>}
+        <ul className="hist-list">
+          {(entries || []).map((e, i) => (
+            <li key={i} className="hist-item">
+              <span className="hist-type">{HISTORY_TYPE_LABEL[e.type] || e.type}</span>
+              <span className="hist-text">{summarizeEntry(e)}</span>
+              <span className="hist-time">{fmtTime(e.created_at)}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="row col" style={{ marginTop: 16 }}>
+          <button className="dlg-opt ghost" onClick={onClose}>关闭</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// v2.0.2: 关键线索日志面板
+function CluesPanel({ clues, loading, onClose }: {
+  clues: ClueEntry[] | null; loading: boolean; onClose: () => void;
+}) {
+  // 按 category 分组
+  const grouped: Record<string, ClueEntry[]> = {};
+  for (const c of clues || []) {
+    if (!grouped[c.category]) grouped[c.category] = [];
+    grouped[c.category].push(c);
+  }
+  const cats = Object.keys(grouped).sort();
+  return (
+    <div className="modal" onClick={onClose}>
+      <div className="modal-box clues-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="speaker">🔖 线索日志</div>
+        <p className="dialog-text small muted">已获取的关键线索汇总。剧情全貌往往就在这些碎片里。</p>
+
+        {loading && <p className="muted small">载入中…</p>}
+        {!loading && cats.length === 0 && (
+          <p className="muted small">你还没拾起任何线索——多和这里的人说说话、仔细搜寻每个角落。</p>
+        )}
+
+        {cats.map((cat) => (
+          <div key={cat} className="clue-group">
+            <h4 className="clue-cat">{cat} <span className="muted small">×{grouped[cat].length}</span></h4>
+            <ul className="clue-list">
+              {grouped[cat].map((c) => (
+                <li key={c.id} className="clue-item">
+                  <span className="clue-text">{c.text}</span>
+                  <span className="muted small">— {c.source} · {fmtTime(c.acquired_at)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        <div className="row col" style={{ marginTop: 16 }}>
+          <button className="dlg-opt ghost" onClick={onClose}>关闭</button>
+        </div>
       </div>
     </div>
   );

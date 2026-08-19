@@ -14,9 +14,11 @@ export async function onRequestPost(context: any) {
   const chk = canEnterArea(s, area);
   if (!chk.ok) return bad(chk.reason || '无法前往');
   const from = s.area;
+  // 快照用于变化提示
+  const before = JSON.parse(JSON.stringify(s));
   applyMove(s, area);
   await saveState(context.env.DB, s);
   await logEvent(context.env.DB, context.data.playerId, 'move', String(area), { from });
   const nick = await getNickname(context.env.DB, context.data.playerId);
-  return json(viewState(s, nick));
+  return json(viewState(s, nick, before));
 }

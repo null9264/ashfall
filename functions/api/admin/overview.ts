@@ -1,4 +1,5 @@
 // 管理员总览：总玩家数 / 今日活跃 / 7 天趋势 / 事件分布
+import type { D1Database } from '@cloudflare/workers-types';
 import { json, bad } from '../../lib/util';
 import { isAdmin, parseCookieToken } from '../../lib/admin';
 
@@ -21,7 +22,7 @@ function emptyTrend7(): { day: string; c: number }[] {
   return arr;
 }
 
-export async function onRequestGet(context: any) {
+export async function onRequestGet(context: { request: Request; env: { DB: D1Database } }) {
   const token = parseCookieToken(context.request);
   if (!(await isAdmin(context.env.DB, token))) return bad('需要管理员登录', 401);
 

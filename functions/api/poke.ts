@@ -11,10 +11,11 @@ export async function onRequestPost(context: any) {
   const s = await getState(context.env.DB, context.data.playerId);
   if (what === 'radio') {
     if (s.area !== 'gate') return bad('这里没有收音机');
+    const before = JSON.parse(JSON.stringify(s));
     s.flags['easter_click'] = true;
     await saveState(context.env.DB, s);
     const nick = await getNickname(context.env.DB, context.data.playerId);
-    return json({ ...viewState(s, nick), text: '旧收音机沙沙响，指示灯一闪一闪，像在等什么发生。' });
+    return json({ ...viewState(s, nick, before), text: '旧收音机沙沙响，指示灯一闪一闪，像在等什么发生。' });
   }
   return bad('没有可互动的东西');
 }

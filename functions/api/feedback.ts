@@ -1,4 +1,5 @@
 // 玩家反馈 API：POST 提交，GET 当前玩家反馈历史
+import type { D1Database } from '@cloudflare/workers-types';
 import { json, bad } from '../lib/util';
 import { logEvent } from '../lib/events';
 import { getNickname } from '../lib/nickname';
@@ -7,8 +8,8 @@ const VALID_CAT = new Set(['bug', 'suggestion', 'praise', 'other']);
 const MIN_LEN = 4;
 const MAX_LEN = 1000;
 
-export async function onRequestPost(context: any) {
-  const body = await context.request.json().catch(() => ({}));
+export async function onRequestPost(context: { request: Request; env: { DB: D1Database }; data: { playerId: string } }) {
+  const body: any = await context.request.json().catch(() => ({}));
   const category = String(body.category ?? 'other');
   const message = String(body.message ?? '').trim();
   const rating = body.rating === undefined || body.rating === null ? null
@@ -29,9 +30,9 @@ export async function onRequestPost(context: any) {
   return json({ ok: true });
 }
 
-export async function onRequestGet(context: any) {
+export async function onRequestGet(context: { request: Request; env: { DB: D1Database }; data: { playerId: string } }) {
   const rows = await context.env.DB.prepare(
     'SELECT id, category, message, status, created_at, rating FROM feedback WHERE player_id = ? ORDER BY created_at DESC LIMIT 50'
-  ).bind(context.data.playerId).all<any>();
+  ).bind(context.data.playerId).all<Record<string, unknown>>();
   return json({ feedback: rows.results || [] });
 }

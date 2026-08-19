@@ -1,4 +1,4 @@
-import type { ViewState, DialogView } from './types';
+import type { ViewState, DialogView, HistoryEntry, ClueEntry } from './types';
 
 const NICK_STORAGE_KEY = 'ashfall_nickname';
 
@@ -57,6 +57,9 @@ export const api = {
   reset: () => req('/api/reset', 'POST') as Promise<ViewState>,
   submitFeedback: (data: { category: string; message: string; rating?: number; meta?: any }) =>
     req('/api/feedback', 'POST', data) as Promise<{ ok: true }>,
+  // v2.0.2: 数值历史 & 线索日志
+  history: (limit = 100) => req('/api/player/history?limit=' + limit) as Promise<{ entries: HistoryEntry[] }>,
+  clues: () => req('/api/player/clues') as Promise<{ clues: ClueEntry[] }>,
 };
 
 // ===== Admin =====

@@ -34,6 +34,9 @@ export interface NpcDef {
   blurb: string;            // 列表里的一句话描述
   nodes: Record<string, DialogNode>;
   start: string;
+  // v2.0.2: 任务完成后下次对话从哪个节点开始
+  //   { questId: 'nodeId' } — 该 quest 完成后,玩家再次找 NPC,对话从这里开始
+  questStart?: Record<string, string>;
 }
 export interface QuestDef {
   id: string;
@@ -100,6 +103,8 @@ export interface PlayerState {
   quests: Record<string, { status: 'active' | 'done'; method?: string }>;
   npc: Record<string, { met: boolean; trust: number; stage: number }>;
   flags: Record<string, boolean>;
+  // v2.0.2: 玩家在每个区域已"成功拾过"的物品 id 列表(同区域同物品只能拾一次)
+  picked: Record<AreaId, string[]>;
   ending: string | null;
   finished_at: number | null;
   updated_at: number;

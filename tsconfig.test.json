@@ -12,9 +12,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "types": ["@cloudflare/workers-types", "node"],
+    "baseUrl": ".",
     "paths": {
       "@lib/*": ["functions/lib/*"]
     }
   },
-  "include": ["functions/lib/**/*", "tests/unit/**/*"]
+  "include": ["functions/lib/**/*", "functions/api/**/*", "tests/unit/**/*", "functions/_ambient.d.ts"]
 }

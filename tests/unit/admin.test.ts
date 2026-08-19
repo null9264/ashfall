@@ -1,7 +1,13 @@
 // admin.ts 单测: hash 对比、constant-time 安全、token 生成语义
 // 不依赖真实 D1,模拟 D1 对象
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { login, isAdmin, constantTimeEqual } from '../../functions/lib/admin';
+
+const __filenameHere = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filenameHere);
 
 class FakeDB {
   rows: any[] = [];
@@ -84,8 +90,7 @@ describe('admin login (hash 化)', () => {
     // 只检查源码字符串中不应包含 "Ashfall@2026" 明文
     // 这里硬编码注释/demo 模式;生产部署前请记得用 env
     // 此测试作为 sanity check,确保未来 dev 不会不小心改回明文
-    const fs = require('fs');
-    const source = fs.readFileSync(require('path').join(__dirname, '../../functions/lib/admin.ts'), 'utf-8');
+    const source = readFileSync(join(__dirname, '../../functions/lib/admin.ts'), 'utf-8');
     expect(source.includes("FALLBACK_ADMIN_PASS = '")).toBe(false);
   });
 });

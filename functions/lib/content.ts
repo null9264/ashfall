@@ -128,8 +128,16 @@ export const NPCS: NpcDef[] = [
       b: { speaker: '医生', text: '地铁和工厂都有。别贪，辐射会要命。', options: [
           { label: '明白', goto: 'bye' },
         ] },
+      c: { speaker: '医生', text: '你真把药送来了。孩子们会记住你的，我也会。\n这是给他们的谢礼，你别嫌弃。',
+        options: [
+          { label: '谢谢医生', goto: 'c_after', setFlag: 'rewarded_by_doctor', giveItem: 'ration' },
+        ] },
+      c_after: { speaker: '医生', text: '这阵子工厂的味道不对。你要是去，小心河上游的风。', options: [
+        { label: '我会注意', goto: 'bye' },
+      ] },
       bye: { text: '（医生低头继续碾药。）' },
     },
+    questStart: { q_cure: 'c' },
   },
   // —— 地铁废线 ——
   {
@@ -425,7 +433,7 @@ export const QUESTS: QuestDef[] = [
 export const HIDDENS: HiddenDef[] = [
   { id: 'h_undermap', name: '地下管网地图', area: 'factory', hint: '工厂某处藏着一张通往地下的地图。',
     requires: [{ flag: 'knows_cabinet' }, { flag: 'met_foreman' }],
-    effects: [{ giveItem: 'map_fragment' }, { flag: 'got_map' }] },
+    effects: [{ item: 'map_fragment', itemQty: 1 }, { flag: 'got_map' }] },
   { id: 'h_bunker', name: '居民楼密室', area: 'tenements', hint: '老吴说的密室，需要那把钥匙。',
     requires: [{ item: 'key_bunker' }, { flag: 'knows_bunker' }],
     effects: [{ flag: 'found_bunker' }, { attr: { reputation: 4 } }, { flag: 'camp_found' }] },
@@ -453,7 +461,7 @@ export const ENDINGS: EndingDef[] = [
       '灰没散，但风里有了人味。',
       '—— 你选了把人一个个接回来。',
     ],
-    requires: [{ attr: { reputation: 20 } }, { flag: 'camp_found' }, { flag: 'exposed' }] },
+    requires: [{ attrs: { reputation: 20 } }, { flag: 'camp_found' }, { flag: 'exposed' }] },
   { id: 'e_hermit', title: '结局 · 独善', tone: '平静',
     passages: [
       '你办完了阿芸托付的事，没多问，也没多管。',
@@ -461,7 +469,7 @@ export const ENDINGS: EndingDef[] = [
       '城门照常开关，灰照常落下。你活下来了，这年头，活下来就算赢。',
       '—— 你选了不让自己陷进去。',
     ],
-    requires: [{ flag: 'found_yue' }, { flag: 'met_foreman' }, { attr: { reputation: -5 } }] },
+    requires: [{ flag: 'found_yue' }, { flag: 'met_foreman' }, { attrs: { reputation: -5 } }] },
   { id: 'e_conspirator', title: '结局 · 揭穿', tone: '凛冽',
     passages: [
       '你把工厂的记录、哑女的照片、墙上的密码，拼成一份没人能抵赖的东西。',
@@ -477,7 +485,7 @@ export const ENDINGS: EndingDef[] = [
       '阿芸还在等女儿。你没再见过她。',
       '—— 你选了在废墟上，做唯一的王。',
     ],
-    requires: [{ flag: 'crushed' }, { attr: { reputation: -10 } }] },
+    requires: [{ flag: 'crushed' }, { attrs: { reputation: -10 } }] },
   { id: 'e_echo', title: '结局 · 回声', tone: '永恒',
     passages: [
       '你带着回声核心回到地面。墙里的嗡鸣，第一次有了形状。',

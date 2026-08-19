@@ -22,9 +22,10 @@ export async function onRequestPost(context: any) {
   if (!h) return bad('没有这样的隐藏要素');
   if (s.flags[hiddenId]) return bad('已经找到了');
   if (!checkHidden(s, hiddenId)) return bad(h.hint + '（条件还不够）');
+  const before = JSON.parse(JSON.stringify(s));
   triggerHidden(s, hiddenId);
   await saveState(context.env.DB, s);
   await logEvent(context.env.DB, context.data.playerId, 'hidden', String(hiddenId));
   const nick = await getNickname(context.env.DB, context.data.playerId);
-  return json({ ...viewState(s, nick), found: h.name });
+  return json({ ...viewState(s, nick, before), found: h.name });
 }

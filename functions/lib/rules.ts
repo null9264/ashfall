@@ -2,6 +2,40 @@
 import type { PlayerState, Req, Effect, AreaId, EndingDef } from './types';
 import { AREAS, NPCS, QUESTS, HIDDENS, ENDINGS, ITEMS } from './content';
 
+// —— 状态 ——
+export interface AttrChanges {
+  attr: Record<string, number>;   // 正/负数表示增减
+  item: { added: string[]; removed: string[] };
+  flags: string[];                  // 被设置的 flag 名
+}
+
+// v2.0.2: 比对两份状态,生成用户可读的"变化清单"
+export function diffStates(before: PlayerState, after: PlayerState): AttrChanges {
+  const attr: Record<string, number> = {};
+  for (const k of Object.keys(before.attrs) as (keyof typeof before.attrs)[]) {
+    const d = after.attrs[k] - before.attrs[k];
+    if (d !== 0) attr[String(k)] = d;
+  }
+  // 物品差异
+  const beforeMap = new Map(before.inventory.map((i) => [i.id, i.qty]));
+  const afterMap = new Map(after.inventory.map((i) => [i.id, i.qty]));
+  const added: string[] = [];
+  const removed: string[] = [];
+  for (const [id, q] of afterMap.entries()) {
+    const beforeQty = beforeMap.get(id) ?? 0;
+    if (q > beforeQty) added.push(`${ITEMS[id]?.name ?? id}×${q - beforeQty}`);
+    else if (q < beforeQty) removed.push(`${ITEMS[id]?.name ?? id}×${beforeQty - q}`);
+  }
+  for (const [id, q] of beforeMap.entries()) {
+    if (!afterMap.has(id) && q > 0) removed.push(`${ITEMS[id]?.name ?? id}×${q}`);
+  }
+  const flags: string[] = [];
+  for (const k of Object.keys(after.flags)) {
+    if (after.flags[k] && !before.flags[k]) flags.push(k);
+  }
+  return { attr, item: { added, removed }, flags };
+}
+
 // —— 物品 ——
 export function hasItem(s: PlayerState, id: string, qty = 1): boolean {
   const it = s.inventory.find((i) => i.id === id);
@@ -74,12 +108,29 @@ export function applyMove(s: PlayerState, area: AreaId): void {
 export function getDialogNode(s: PlayerState, npcId: string, nodeId: string) {
   const npc = NPCS.find((n) => n.id === npcId);
   if (!npc || npc.area !== s.area) return null;
-  const node = npc.nodes[nodeId] ?? npc.nodes[npc.start];
+  // v2.0.2 修复: 如果请求 start 节点,按 trust/quest 进度选对话起点
+  let actualNodeId = nodeId;
+  if (nodeId === npc.start || nodeId === '__start__') {
+    actualNodeId = chooseStartNode(s, npcId, npc);
+  }
+  const node = npc.nodes[actualNodeId] ?? npc.nodes[npc.start];
   const options = (node.options ?? [])
     .map((o, index) => ({ o, index }))
     .filter(({ o }) => meetReq(s, o.requires))
     .map(({ o, index }) => ({ label: o.label, index }));
   return { speaker: node.speaker, text: node.text, options };
+}
+
+// v2.0.2: 选择 NPC 对话起点(基于 quest 完成 / trust)
+// 约定: NPC.questStart  = { [questId]: 'node' } - 任务完成后下次对话从指定节点开始
+function chooseStartNode(s: PlayerState, npcId: string, _npc: any): string {
+  // 这里写成对未来扩展友好的形式:扫描所有 quest,看 done 后是否要路由
+  for (const [questId, state] of Object.entries(s.quests || {})) {
+    if (state.status !== 'done') continue;
+    const map = (_npc as any).questStart?.[questId];
+    if (map && _npc.nodes[map]) return map;
+  }
+  return _npc.start;
 }
 export function applyDialogChoice(s: PlayerState, npcId: string, nodeId: string, choiceIndex: number) {
   const npc = NPCS.find((n) => n.id === npcId);

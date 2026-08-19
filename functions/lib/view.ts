@@ -1,12 +1,12 @@
 // 组装前端可见视图（仅暴露玩家应知的进度，不泄露全部 flag/条件）
 import type { PlayerState } from './types';
 import { AREAS, NPCS, QUESTS, HIDDENS, ENDINGS } from './content';
-import { evaluateEndings } from './rules';
+import { evaluateEndings, diffStates } from './rules';
 
-export function viewState(s: PlayerState, nickname: string | null) {
+export function viewState(s: PlayerState, nickname: string | null, before?: PlayerState) {
   const area = AREAS[s.area];
   const endings = evaluateEndings(s);
-  return {
+  const base = {
     nickname,
     area: {
       id: area.id, name: area.name, desc: area.desc, danger: area.danger ?? 0,
@@ -30,4 +30,9 @@ export function viewState(s: PlayerState, nickname: string | null) {
     ending: s.ending,
     endingDetail: s.ending ? ENDINGS.find((e) => e.id === s.ending) ?? null : null,
   };
+  // v2.0.2: 如果传入了 before,附上变化清单给前端
+  if (before) {
+    return { ...base, changes: diffStates(before, s) };
+  }
+  return base;
 }
