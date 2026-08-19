@@ -3,6 +3,7 @@ import { api, getSavedNickname, setSavedNickname } from './api';
 import type { ViewState, DialogView, HistoryEntry, ClueEntry } from './types';
 import { StatsPanel } from './panels/StatsPanel';
 import { CluesPanel } from './panels/CluesPanel';
+import { HistoryDrawer } from './components/HistoryDrawer';
 
 type ToastCls = '' | 'good' | 'bad' | 'warn' | 'secret';
 
@@ -22,9 +23,28 @@ export default function App() {
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [clues, setClues] = useState<ClueEntry[] | null>(null);
   const [panelBusy, setPanelBusy] = useState(false);
+  const [histLoading, setHistLoading] = useState(false);
+  // 顶部抽屉可见状态(mobile 默认收起, desktop 默认收起,点击展开)
+  const [histOpen, setHistOpen] = useState(false);
+  // 抑制同 hint 重复弹气泡
+  const lastHintId = useRef('');
   // 用 ref 标记是否已经做过首次 state 拉取,避免 React StrictMode 双调用触发副作用
   const inited = useRef(false);
   const lastToastKey = useRef('');
+
+  // 简单取数（不弹 toast 也不刷状态外的副作用）
+  const fetchHistory = useCallback(async (limit = 20) => {
+    setHistLoading(true);
+    try {
+      const r = await api.history(limit);
+      setHistory(r.entries);
+    } catch (e: any) {
+      // 静默失败，不打扰玩家
+      console.error('[history] load failed', e);
+    } finally {
+      setHistLoading(false);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     const v = await api.state();
@@ -37,12 +57,28 @@ export default function App() {
       setSavedNickname(v.nickname);
     }
     setView(v);
-  }, []);
+    // 静默刷新历史（顶部抽屉用），但只有在抽屉打开过/全屏面板打开时才拉
+    if (histOpen || showStatsPanel) fetchHistory(20);
+  }, [histOpen, showStatsPanel, fetchHistory]);
   useEffect(() => {
     if (inited.current) return;
     inited.current = true;
     refresh();
-  }, [refresh]);
+    fetchHistory(20);
+  }, [refresh, fetchHistory]);
+
+  // 静默暗线提示气泡
+  useEffect(() => {
+    if (!view?.hint) return;
+    const h = view.hint;
+    if (lastHintId.current === h.id) return;
+    lastHintId.current = h.id;
+    // 5s 后清掉（让玩家有时间看到），但不影响 hint 字段本身
+    setTimeout(() => {
+      setView((v) => v ? { ...v, hint: null } : v);
+    }, 5000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view?.hint?.id]);
 
   const toastMsg = (m: string, cls: ToastCls = '', key?: string) => {
     // 简单 dedupe: 同 key 且未消失时不覆盖
@@ -147,18 +183,52 @@ export default function App() {
     }
   };
 
+  // 顶部抽屉的开启/折叠：第一次点开时如果没有数据就拉一下
+  const toggleHistDrawer = async () => {
+    setHistOpen((o) => !o);
+    if (!history) fetchHistory(20);
+  };
+
   const a = view.attrs;
   return (
-    <div className="app">
+    <div className={'app' + (histOpen ? ' hist-open' : '')}>
       <header className="topbar">
         <div className="brand">灰烬城 <span>· ASHFALL</span></div>
         <div className="who">{view.nickname && <span className="nick">@{view.nickname}</span>}</div>
-        <div className="stats">
-          <Stat label="生命" v={a.hp} max={100} cls="hp" />
-          <Stat label="辐射" v={a.radiation} max={100} cls="rad" />
-          <Stat label="声望" v={a.reputation} max={50} cls="rep" />
+        <div className="topbar-right">
+          <div className="stats">
+            <Stat label="HP" v={a.hp} max={100} cls="hp" />
+            <Stat label="STA" v={a.stamina} max={100} cls="sta" />
+            <Stat label="RAD" v={a.radiation} max={100} cls="rad" />
+            <Stat label="REP" v={a.reputation} max={50} cls="rep" />
+            <Stat label="SCRAP" v={a.scrap} max={20} cls="scr" />
+          </div>
+          <button
+            className={'hist-toggle' + (histOpen ? ' on' : '')}
+            onClick={toggleHistDrawer}
+            aria-expanded={histOpen}
+            aria-controls="hist-drawer-panel"
+            title="最近行动 / 历史"
+          >
+            <span className="hist-toggle-dot" aria-hidden>⏱</span>
+            <span className="hist-toggle-label">行动</span>
+            {history && history.length > 0 && <span className="hist-toggle-badge">{history.length}</span>}
+          </button>
         </div>
       </header>
+
+      {/* 顶部右侧抽屉面板：默认折叠;展开后变成 full-width dropdown */}
+      {histOpen && (
+        <div id="hist-drawer-panel" className="hist-drawer-panel">
+          <HistoryDrawer
+            entries={history}
+            loading={histLoading}
+            onOpenFull={() => { setShowStatsPanel(true); }}
+            onRefresh={() => fetchHistory(120)}
+          />
+          <button className="hist-drawer-close" onClick={() => setHistOpen(false)} aria-label="关闭">✕</button>
+        </div>
+      )}
 
       <main className="grid">
         {/* 区域探索 */}
@@ -317,6 +387,14 @@ export default function App() {
         </div>
       )}
 
+      {/* 暗线提示气泡 — 显示 5s 自动消失 */}
+      {view.hint && view.hint.text && !dialog && (
+        <div className="hint-bubble" role="status" aria-live="polite">
+          <div className="hint-bubble-title">暗线 · {view.hint.area.name}</div>
+          <div className="hint-bubble-text">{view.hint.text}</div>
+        </div>
+      )}
+
       {toast && <div className={'toast ' + toastCls}>{toast}</div>}
     </div>
   );
@@ -325,7 +403,7 @@ export default function App() {
 function Stat({ label, v, max, cls }: { label: string; v: number; max: number; cls: string }) {
   const pct = Math.max(0, Math.min(100, (v / max) * 100));
   return (
-    <div className="stat">
+    <div className="stat" title={label + ' ' + v + '/' + max}>
       <span className="stat-label">{label}</span>
       <span className="stat-bar"><i className={cls} style={{ width: pct + '%' }} /></span>
       <span className="stat-v">{v}</span>

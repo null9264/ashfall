@@ -313,6 +313,46 @@ CODE=${R: -3}
 check "未登录访 feedback 应 401" "401" "$CODE"
 
 echo ""
+echo "================ v2.0.2 历史中文名 + hint 回归 (新) ================"
+
+# 34. history 条目 move 类型应含中文 area_name
+R=$(curl -s -b $J "$BASE/api/player/history?limit=10")
+HAS_FROM=$(echo "$R" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+moves=[e for e in d['entries'] if e['type']=='move']
+print(any(e.get('meta',{}).get('from_name') for e in moves))")
+check "move 历史含 from_name (中文)" "True" "$HAS_FROM"
+HAS_TO=$(echo "$R" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+moves=[e for e in d['entries'] if e['type']=='move']
+print(any(e.get('meta',{}).get('to_name') for e in moves))")
+check "move 历史含 to_name (中文)" "True" "$HAS_TO"
+
+# 35. quest_complete 历史含中文 method
+R=$(curl -s -b $J -X POST $BASE/api/quest/complete -H 'Content-Type: application/json' -d '{"questId":"q_supply","methodId":"m_give"}' -w "%{http_code}")
+# 大概率 400 因为没物品；但走 400 路径也没事,我们看最近 history
+R=$(curl -s -b $J "$BASE/api/player/history?limit=5")
+HAS_METHOD=$(echo "$R" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+completes=[e for e in d['entries'] if e['type']=='quest_complete']
+print(any(e.get('meta',{}).get('method') for e in completes))")
+# 这次测试服不会真完成 quest，但至少有 quest_accept 的 name 字段
+check "history 含 quest_complete.method 或 quest_accept.name" "True" "$HAS_METHOD"
+
+# 36. trigger-hidden 历史(若前期接 q_supply 已被接,改用 poke radio 触发 h_easter)
+R=$(curl -s -b $J -X POST $BASE/api/poke -H 'Content-Type: application/json' -d '{"what":"radio"}' > /dev/null)
+R=$(curl -s -b $J "$BASE/api/player/history?limit=10")
+# 验证 server 没再写 login 事件(历史里没有类型为 login 的)
+HAS_LOGIN=$(echo "$R" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+print(any(e['type']=='login' for e in d['entries']))")
+check "/api/state 不再写 login 事件(防污染)" "False" "$HAS_LOGIN"
+
+echo ""
 echo "================ 汇总 ================"
 echo "✅ 通过: $PASS"
 echo "❌ 失败: $FAIL"

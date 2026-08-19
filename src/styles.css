@@ -732,3 +732,261 @@ button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
   box-shadow: 0 0 24px rgba(110, 77, 200, 0.28);
   background: linear-gradient(90deg, rgba(110, 77, 200, 0.18), rgba(224, 104, 47, 0.12));
 }
+
+/* ===================== v2.0.2 top-right history drawer + hint bubble ===================== */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.topbar .stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.topbar .stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+.topbar .stat-label {
+  width: 28px;
+  color: var(--ember);
+  font-weight: 600;
+}
+.topbar .stat-bar {
+  width: 58px;
+  height: 6px;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.topbar .stat-v {
+  width: 22px;
+  text-align: right;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.stat-bar i.hp   { background: var(--ember); }
+.stat-bar i.sta  { background: #cabe9c; }
+.stat-bar i.rad  { background: var(--toxic); }
+.stat-bar i.rep  { background: var(--gold); }
+.stat-bar i.scr  { background: #9aa6b3; }
+
+/* 行动按钮 */
+.hist-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #1f1a14;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: .15s;
+  position: relative;
+}
+.hist-toggle:hover { border-color: var(--ember); color: var(--ink); background: #261d14; }
+.hist-toggle.on { border-color: var(--ember); color: var(--ember); background: #2a1c12; }
+.hist-toggle-dot { font-size: 14px; }
+.hist-toggle-label { letter-spacing: .04em; }
+.hist-toggle-badge {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ember);
+  color: #1a1410;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 18px;
+}
+
+/* 抽屉面板 */
+.hist-drawer-panel {
+  position: relative;
+  margin-bottom: 14px;
+  background: linear-gradient(180deg, #221c16, #1a140f);
+  border: 1px solid var(--ember);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 14px 36px rgba(0,0,0,.45);
+  animation: histDrop .18s ease;
+}
+@keyframes histDrop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hist-drawer-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #1d1812;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.hist-drawer-close:hover { color: var(--ember); border-color: var(--ember); }
+
+.hist-drawer { width: 100%; }
+.hist-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-right: 30px;
+}
+.hist-title {
+  font-size: 13px;
+  letter-spacing: .12em;
+  color: var(--ember);
+  text-transform: uppercase;
+}
+.hist-refresh {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+}
+.hist-refresh:hover:not(:disabled) { color: var(--ember); border-color: var(--ember); }
+.hist-open {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.hist-open:hover { color: var(--ember); border-color: var(--ember); }
+.hist-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 0 4px;
+}
+.hist-mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.hist-mini {
+  display: grid;
+  grid-template-columns: 56px 1fr 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13.5px;
+}
+.hist-mini:last-child { border-bottom: none; }
+.hist-mini-type {
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  color: var(--ember);
+  background: #2a1c12;
+  border-radius: 4px;
+  padding: 2px 8px;
+  text-align: center;
+}
+.hist-mini-text {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hist-mini-time {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* 暗线提示气泡（hint bubble） */
+.hint-bubble {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #2a1f17, #1c1410);
+  color: var(--ink);
+  border: 1px solid #6e4dc8;
+  border-radius: 14px;
+  padding: 12px 18px;
+  max-width: min(640px, calc(100% - 32px));
+  box-shadow: 0 16px 48px rgba(0,0,0,.5), 0 0 28px rgba(110, 77, 200, 0.22);
+  z-index: 24;
+  animation: hintRise .25s ease;
+}
+.hint-bubble-title {
+  font-size: 12px;
+  color: #c8a8ff;
+  letter-spacing: .14em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.hint-bubble-text {
+  font-size: 15px;
+  line-height: 1.6;
+}
+@keyframes hintRise {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ============ Mobile 调整 (topbar 上 5 项数值 + 抽屉要紧凑) ============ */
+@media (max-width: 720px) {
+  .topbar {
+    align-items: flex-start;
+  }
+  .topbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .topbar .stats { gap: 6px; }
+  /* mobile: 隐藏 label, 只剩值 + 小条; 不挡活动空间 */
+  .topbar .stat-label { display: none; }
+  .topbar .stat-bar { width: 32px; }
+  .topbar .stat-v { width: 20px; font-size: 11.5px; }
+  .hist-toggle-label { display: none; }
+  .hist-toggle { padding: 6px 10px; }
+  /* 抽屉全宽 */
+  .hist-drawer-panel {
+    margin-left: -14px;
+    margin-right: -14px;
+    border-radius: 10px;
+  }
+  .hist-mini {
+    grid-template-columns: 50px 1fr 44px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  /* 暗线提示也改为贴底留出 toast 空间 */
+  .hint-bubble {
+    bottom: 12px;
+    max-width: calc(100% - 24px);
+    padding: 10px 14px;
+  }
+  .hint-bubble-text { font-size: 14px; }
+}
+@media (max-width: 480px) {
+  .topbar .stat-bar { width: 26px; }
+}
+

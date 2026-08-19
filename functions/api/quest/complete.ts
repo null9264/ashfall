@@ -4,6 +4,7 @@ import { viewState } from '../../lib/view';
 import { json, bad } from '../../lib/util';
 import { logEvent } from '../../lib/events';
 import { getNickname } from '../../lib/nickname';
+import { QUESTS } from '../../lib/content';
 
 export async function onRequestPost(context: any) {
   const body = await context.request.json().catch(() => ({}));
@@ -16,7 +17,14 @@ export async function onRequestPost(context: any) {
   const before = JSON.parse(JSON.stringify(s));
   completeQuest(s, questId, methodId);
   await saveState(context.env.DB, s);
-  await logEvent(context.env.DB, context.data.playerId, 'quest_complete', String(questId), { methodId });
+  const questDef = QUESTS.find((q) => q.id === questId);
+  const questName = questDef?.name ?? questId;
+  const methodLabel = questDef?.methods.find((m) => m.id === methodId)?.label ?? methodId;
+  await logEvent(context.env.DB, context.data.playerId, 'quest_complete', String(questId), {
+    methodId,
+    name: questName,
+    method: methodLabel,
+  });
   const nick = await getNickname(context.env.DB, context.data.playerId);
   return json({ ...viewState(s, nick, before) });
 }

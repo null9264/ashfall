@@ -7,7 +7,7 @@ export interface AttrChanges {
 
 // v2.0.2: 数值历史面板 — 来自 /api/player/history 的扁平条目
 export interface HistoryEntry {
-  type: 'move' | 'pickup' | 'quest_accept' | 'quest_complete' | 'hidden' | 'ending' | 'reset' | 'nickname' | 'login';
+  type: 'move' | 'pickup' | 'quest_accept' | 'quest_complete' | 'hidden' | 'ending' | 'reset' | 'nickname' | 'login' | 'hint';
   ref: string | null;
   meta: Record<string, any>;
   created_at: number;
@@ -34,6 +34,15 @@ export interface ViewState {
   ending: string | null;
   endingDetail: { id: string; title: string; tone: string; passages: string[] } | null;
   changes?: AttrChanges;
+  // v2.0.2: 暗线提示（只在新的一次 /api/state 拉取时附带，前端弹一个小气泡即可）
+  hint?: HintItem | null;
+}
+
+export interface HintItem {
+  id: string;
+  kind: 'hidden' | 'quest' | 'npc';
+  text: string;
+  area: { id: string; name: string };
 }
 export interface DialogView {
   npc: string;

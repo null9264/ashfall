@@ -4,6 +4,7 @@ import { viewState } from '../lib/view';
 import { json, bad } from '../lib/util';
 import { logEvent } from '../lib/events';
 import { getNickname } from '../lib/nickname';
+import { AREAS } from '../lib/content';
 import type { AreaId } from '../lib/types';
 
 export async function onRequestPost(context: any) {
@@ -18,7 +19,11 @@ export async function onRequestPost(context: any) {
   const before = JSON.parse(JSON.stringify(s));
   applyMove(s, area);
   await saveState(context.env.DB, s);
-  await logEvent(context.env.DB, context.data.playerId, 'move', String(area), { from });
+  await logEvent(context.env.DB, context.data.playerId, 'move', String(area), {
+    from,
+    from_name: AREAS[from]?.name ?? from,
+    to_name: AREAS[area]?.name ?? area,
+  });
   const nick = await getNickname(context.env.DB, context.data.playerId);
   return json(viewState(s, nick, before));
 }

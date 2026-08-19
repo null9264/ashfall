@@ -25,7 +25,8 @@ export async function onRequestPost(context: any) {
   const before = JSON.parse(JSON.stringify(s));
   triggerHidden(s, hiddenId);
   await saveState(context.env.DB, s);
-  await logEvent(context.env.DB, context.data.playerId, 'hidden', String(hiddenId));
+  const hiddenName = HIDDENS.find((x) => x.id === hiddenId)?.name ?? hiddenId;
+  await logEvent(context.env.DB, context.data.playerId, 'hidden', String(hiddenId), { name: hiddenName });
   const nick = await getNickname(context.env.DB, context.data.playerId);
   return json({ ...viewState(s, nick, before), found: h.name });
 }
