@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { api } from './api';
+import { api, getSavedNickname, setSavedNickname } from './api';
 import type { ViewState, DialogView } from './types';
 
 export default function App() {
@@ -11,7 +11,18 @@ export default function App() {
   // 用 ref 标记是否已经做过首次 state 拉取，避免 React StrictMode 双调用触发副作用
   const inited = useRef(false);
 
-  const refresh = useCallback(async () => { setView(await api.state()); }, []);
+  const refresh = useCallback(async () => {
+    const v = await api.state();
+    // 即便服务端这一次的响应里 nickname 字段恰好为 null（兼容老版本/防回归），
+    // 也能从我们之前持久化的 localStorage 兜底拉回来，绝不再次进入登记门
+    if (!v.nickname) {
+      const cached = getSavedNickname();
+      if (cached) v.nickname = cached;
+    } else {
+      setSavedNickname(v.nickname);
+    }
+    setView(v);
+  }, []);
   useEffect(() => {
     if (inited.current) return;
     inited.current = true;
@@ -31,6 +42,7 @@ export default function App() {
 
   if (!view) return <div className="loading">载入废土中…</div>;
   // 首次进入：未设置昵称 → 强制设置
+  // 三重保险：服务端 view.nickname / 本地缓存 / setNickname 入库
   if (!view.nickname) return <NicknameGate onDone={refresh} />;
   if (view.ending && view.endingDetail)
     return <Ending detail={view.endingDetail} onReset={() => act(async () => api.reset())} />;
@@ -310,6 +322,7 @@ function NicknameGate({ onDone }: { onDone: () => void }) {
     setBusy(true); setErr('');
     try {
       await api.setNickname(v);
+      setSavedNickname(v); // 显式缓存，作为后续任何响应丢失兜底
       onDone();
     } catch (e: any) {
       console.error('[nickname]', e);

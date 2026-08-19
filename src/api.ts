@@ -1,5 +1,28 @@
 import type { ViewState, DialogView } from './types';
 
+const NICK_STORAGE_KEY = 'ashfall_nickname';
+
+export function getSavedNickname(): string | null {
+  try {
+    const v = localStorage.getItem(NICK_STORAGE_KEY);
+    return v && v.length <= 16 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedNickname(nick: string | null): void {
+  try {
+    if (nick && nick.length > 0 && nick.length <= 16) {
+      localStorage.setItem(NICK_STORAGE_KEY, nick);
+    } else {
+      localStorage.removeItem(NICK_STORAGE_KEY);
+    }
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
 async function req(path: string, method = 'GET', body?: any): Promise<any> {
   const res = await fetch(path, {
     method,
@@ -9,6 +32,10 @@ async function req(path: string, method = 'GET', body?: any): Promise<any> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || '请求失败');
+  // 任何包含 nickname 字段的响应，都同步缓存到 localStorage，作为后端响应丢失时的兜底
+  if (data && typeof data === 'object' && typeof data.nickname === 'string' && data.nickname.length > 0) {
+    setSavedNickname(data.nickname);
+  }
   return data;
 }
 

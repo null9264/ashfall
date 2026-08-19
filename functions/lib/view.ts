@@ -3,7 +3,7 @@ import type { PlayerState } from './types';
 import { AREAS, NPCS, QUESTS, HIDDENS, ENDINGS } from './content';
 import { evaluateEndings } from './rules';
 
-export function viewState(s: PlayerState, nickname: string | null = null) {
+export function viewState(s: PlayerState, nickname: string | null) {
   const area = AREAS[s.area];
   const endings = evaluateEndings(s);
   return {

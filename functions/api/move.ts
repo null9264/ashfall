@@ -3,6 +3,7 @@ import { canEnterArea, applyMove } from '../lib/rules';
 import { viewState } from '../lib/view';
 import { json, bad } from '../lib/util';
 import { logEvent } from '../lib/events';
+import { getNickname } from '../lib/nickname';
 import type { AreaId } from '../lib/types';
 
 export async function onRequestPost(context: any) {
@@ -16,5 +17,6 @@ export async function onRequestPost(context: any) {
   applyMove(s, area);
   await saveState(context.env.DB, s);
   await logEvent(context.env.DB, context.data.playerId, 'move', String(area), { from });
-  return json(viewState(s));
+  const nick = await getNickname(context.env.DB, context.data.playerId);
+  return json(viewState(s, nick));
 }

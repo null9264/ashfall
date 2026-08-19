@@ -3,6 +3,7 @@ import { canAcceptQuest } from '../../lib/rules';
 import { viewState } from '../../lib/view';
 import { json, bad } from '../../lib/util';
 import { logEvent } from '../../lib/events';
+import { getNickname } from '../../lib/nickname';
 
 export async function onRequestPost(context: any) {
   const body = await context.request.json().catch(() => ({}));
@@ -13,5 +14,6 @@ export async function onRequestPost(context: any) {
   s.quests[questId] = { status: 'active' };
   await saveState(context.env.DB, s);
   await logEvent(context.env.DB, context.data.playerId, 'quest_accept', String(questId));
-  return json(viewState(s));
+  const nick = await getNickname(context.env.DB, context.data.playerId);
+  return json(viewState(s, nick));
 }
