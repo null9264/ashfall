@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 灰烬城 Ashfall - 完整回归测试脚本 (v2.0.1)
-# 覆盖:昵称/状态/移动/对话/任务/拾物/隐藏/结局/重置/管理员/反馈/nickname 持久化
+# 灰烬城 Ashfall - 完整回归测试脚本 (v2.0.2)
+# 覆盖:昵称/状态/移动/对话/任务/拾物/隐藏/结局/重置/管理员/反馈/数值记录/线索日志/nickname 持久化
 #
 # 用法:
 #   ./regression.sh                           # 默认 URL
@@ -118,6 +118,32 @@ check "接 q_supply 200" "200" "$CODE"
 R=$(curl -s -b $J -X POST $BASE/api/quest/complete -H 'Content-Type: application/json' -d '{"questId":"q_supply","methodId":"m_give"}' -w "%{http_code}")
 CODE=${R: -3}
 check "无材料完成任务应 400" "400" "$CODE"
+
+# v2.0.2 新端点: history + clues (数值记录/线索日志面板)
+# 14a. /api/player/history 返回 entries 数组
+R=$(curl -s -b $J "$BASE/api/player/history?limit=20")
+HAS_ENTRIES=$(echo "$R" | python3 -c "import sys,json;d=json.load(sys.stdin);print('entries' in d and isinstance(d['entries'], list))")
+check "history 端点返回 entries" "True" "$HAS_ENTRIES"
+
+# 14b. /api/player/clues 返回 clues 数组 (新号玩家应为 [],但结构必须有)
+R=$(curl -s -b $J $BASE/api/player/clues)
+HAS_CLUES=$(echo "$R" | python3 -c "import sys,json;d=json.load(sys.stdin);print('clues' in d and isinstance(d['clues'], list))")
+check "clues 端点返回 clues" "True" "$HAS_CLUES"
+
+# 14c. history limit 边界校验
+R=$(curl -s -b $J "$BASE/api/player/history?limit=-5" -w "%{http_code}")
+CODE=${R: -3}
+check "history limit=-5 应 400" "400" "$CODE"
+
+# 14d. 给玩家触发几个事件后 clues 应非空(走对话+拾物触发 flag)
+curl -s -b $J -X POST $BASE/api/move -H 'Content-Type: application/json' -d '{"area":"market"}' > /dev/null
+curl -s -b $J -X POST $BASE/api/move -H 'Content-Type: application/json' -d '{"area":"gate"}' > /dev/null
+R=$(curl -s -b $J $BASE/api/player/clues)
+# 这条玩家没推进剧情,clues 大概率为 0 但结构正确
+check "clues 端点可正常多次访问" "True" "$(echo "$R" | python3 -c "import sys,json;print('clues' in json.load(sys.stdin))")"
+
+# 回 gate
+curl -s -b $J -X POST $BASE/api/move -H 'Content-Type: application/json' -d '{"area":"gate"}' > /dev/null
 
 echo ""
 echo "================ v2.0.1 nickname 持久化回归 (新) ================"

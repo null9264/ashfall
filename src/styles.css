@@ -583,4 +583,152 @@ button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
   button.mini.primary { padding: 8px 12px; font-size: 12px; }
   button.nav { padding: 6px 10px; font-size: 12px; }
   .seg-btn { min-width: 60px; font-size: 12px; padding: 6px 8px; }
+  .stats-panel, .clues-panel { max-height: 86vh; }
+  .stats-row { grid-template-columns: 56px 1fr 38px; }
+}
+
+/* ============== v2.0.2: 数值记录面板 ============== */
+.stats-panel,
+.clues-panel {
+  max-width: 620px;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+/* 数值面板：5 条数值条 */
+.stats-current {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 6px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+}
+.stats-row .stats-name {
+  font-size: 12px;
+  letter-spacing: .14em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.stats-row .stats-v {
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: bold;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.stat-bar.big {
+  width: auto;
+  height: 10px;
+  background: #000;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.stat-bar.big i.sta { background: #6aa8c7; }
+.stat-bar.big i.scr { background: var(--muted); }
+
+/* 历史记录列表 */
+.hist-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 38vh;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.hist-item {
+  display: grid;
+  grid-template-columns: 76px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13.5px;
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-type {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  text-align: center;
+  background: var(--bg2);
+}
+.hist-text { color: var(--ink); line-height: 1.5; }
+.hist-time {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ============== v2.0.2: 线索日志面板 ============== */
+.clues-panel {
+  /* 复用 .modal-box 之外,这里额外给点内层留白 */
+  padding: 22px 24px 18px;
+}
+.clues-panel .speaker { margin-bottom: 8px; }
+
+.clue-group {
+  margin-top: 18px;
+  padding: 12px 14px 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ember);
+  border-radius: 6px;
+}
+.clue-cat {
+  margin: 0 0 8px;
+  font-size: 14px;
+  letter-spacing: .12em;
+  color: var(--ember);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.clue-cat .muted { text-transform: none; letter-spacing: 0; }
+
+.clue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.clue-item {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.clue-item:last-child { border-bottom: none; }
+.clue-text {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.clue-item .muted { font-size: 12px; }
+
+/* toast 类型样式（Feature 4 提示反馈） */
+.toast.good { border-color: var(--toxic); color: var(--toxic); box-shadow: 0 0 24px rgba(143, 191, 90, 0.18); }
+.toast.bad  { border-color: var(--ember2); color: #ff8a6a; box-shadow: 0 0 24px rgba(200, 71, 42, 0.22); }
+.toast.warn { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 24px rgba(217, 164, 65, 0.16); }
+.toast.secret {
+  border-color: #6e4dc8;
+  color: #c8a8ff;
+  box-shadow: 0 0 24px rgba(110, 77, 200, 0.28);
+  background: linear-gradient(90deg, rgba(110, 77, 200, 0.18), rgba(224, 104, 47, 0.12));
 }

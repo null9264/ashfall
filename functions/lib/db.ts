@@ -45,11 +45,22 @@ export async function saveState(DB: D1Database, s: PlayerState): Promise<void> {
 }
 
 function rowToState(r: any): PlayerState {
+  // 防御:任何 JSON 字段为空字符串或解析失败都降级为空值,不要 throw 把 state 端了
+  const parse = <T,>(raw: any, fallback: T): T => {
+    if (raw === null || raw === undefined || raw === '') return fallback;
+    try { return JSON.parse(raw) as T; } catch (e) {
+      console.error('[db] JSON parse failed, using fallback', e);
+      return fallback;
+    }
+  };
   return {
     player_id: r.player_id, area: r.area,
-    attrs: JSON.parse(r.attrs), inventory: JSON.parse(r.inventory),
-    quests: JSON.parse(r.quests), npc: JSON.parse(r.npc), flags: JSON.parse(r.flags),
-    picked: r.picked ? JSON.parse(r.picked) : {},
+    attrs: parse(r.attrs, { hp: 100, stamina: 100, radiation: 0, reputation: 0, scrap: 0 }),
+    inventory: parse(r.inventory, []),
+    quests: parse(r.quests, {}),
+    npc: parse(r.npc, {}),
+    flags: parse(r.flags, {}),
+    picked: parse(r.picked, {} as Record<string, string[]>),
     ending: r.ending, finished_at: r.finished_at, updated_at: r.updated_at,
   };
 }
