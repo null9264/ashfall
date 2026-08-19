@@ -8,6 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "cf:dev": "wrangler pages dev dist --d1 DB --persist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "bash tests/e2e/regression.sh",
     "deploy": "vite build && wrangler pages deploy dist --branch main"
   },
   "dependencies": {
@@ -21,6 +24,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.5.4",
     "vite": "^5.4.2",
+    "vitest": "^1.6.0",
     "wrangler": "^3.114.17"
   }
 }

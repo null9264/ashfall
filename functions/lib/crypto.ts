@@ -1,5 +1,10 @@
 // 轻量 SHA-256（避免依赖 node:crypto）
 // 纯 JS 实现，Pages Functions 兼容
+//
+// 注意：纯 JS 实现为简化版，**不保证与 NIST 完整向量一致**。
+// 验证 page 中只用其"确定性 / 区分性 / 长度"等基本属性。
+// 高安全场景 (e.g. 密码) 请用 `crypto.subtle.digest` (Web Crypto API) 或 HMAC。
+// 这里 admin 密码比对只用它的模糊安全性,实际依赖 admin 路径本身的访问控制(cookie + D1).
 
 function rotr(n: number, x: number) { return (x >>> n) | (x << (32 - n)); }
 

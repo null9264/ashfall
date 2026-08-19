@@ -28,6 +28,6 @@ export function viewState(s: PlayerState, nickname: string | null) {
       locked: endings.locked.map((e) => ({ id: e.id, title: e.title })),
     },
     ending: s.ending,
-    endingDetail: s.ending ? ENDINGS[s.ending] : null,
+    endingDetail: s.ending ? ENDINGS.find((e) => e.id === s.ending) ?? null : null,
   };
 }

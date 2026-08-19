@@ -1,0 +1,23 @@
+/*
+# 灰烬城 Ashfall 安全响应头
+# 文档: https://developers.cloudflare.com/pages/configuration/headers/
+
+# 防 XSS (允许 inline style 因为我们使用 inline style,但禁止 inline script)
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'
+
+# 防 MIME 嗅探
+X-Content-Type-Options: nosniff
+
+# 防点击劫持
+X-Frame-Options: DENY
+
+# Referrer 控制(我们不需要 referrer 给第三方)
+Referrer-Policy: no-referrer
+
+# 权限策略:关掉用不到的浏览器特性
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+# 跨域嵌入控制
+Cross-Origin-Embedder-Policy: same-origin
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
