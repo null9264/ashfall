@@ -197,11 +197,11 @@ export default function App() {
         <div className="who">{view.nickname && <span className="nick">@{view.nickname}</span>}</div>
         <div className="topbar-right">
           <div className="stats">
-            <Stat label="HP" v={a.hp} max={100} cls="hp" />
-            <Stat label="STA" v={a.stamina} max={100} cls="sta" />
-            <Stat label="RAD" v={a.radiation} max={100} cls="rad" />
-            <Stat label="REP" v={a.reputation} max={50} cls="rep" />
-            <Stat label="SCRAP" v={a.scrap} max={20} cls="scr" />
+            <Stat label="生命" v={a.hp} max={100} cls="hp" />
+            <Stat label="体力" v={a.stamina} max={100} cls="sta" />
+            <Stat label="辐射" v={a.radiation} max={100} cls="rad" />
+            <Stat label="声望" v={a.reputation} max={50} cls="rep" />
+            <Stat label="废料" v={a.scrap} max={20} cls="scr" />
           </div>
           <button
             className={'hist-toggle' + (histOpen ? ' on' : '')}

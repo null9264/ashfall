@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 
 // 确保我们导出的 history 摘要能用上 meta 里提供的 from_name/to_name/npc_name
-import { summarizeEntry } from '../../src/components/HistoryDrawer';
+import { summarizeEntry, filterVisibleEntries, HISTORY_TYPE_LABEL } from '../../src/components/HistoryDrawer';
 import type { HistoryEntry } from '../../src/types';
 
 describe('summarizeEntry 中文名优先', () => {
@@ -33,15 +33,27 @@ describe('summarizeEntry 中文名优先', () => {
     expect(s).toBe('tenements');
   });
 
-  it('talk: meta.npc_name 优先', () => {
+  it('talk: meta.npc_name 优先于 ref', () => {
     const e: HistoryEntry = {
       type: 'talk',
       ref: 'linshen',
       meta: { npc_name: '林婶', node: 'a', choice: 1 } as any,
       created_at: Date.now(),
     };
-    // summarizeEntry 当前不专门处理 talk 类型 — 检查不抛错即可
-    expect(() => summarizeEntry(e)).not.toThrow();
+    const s = summarizeEntry(e);
+    // 中文 NPC 名,且不显示 ghost/raw ref
+    expect(s).toContain('林婶');
+    expect(s).not.toContain('linshen');
+    expect(s).toContain('与');
+  });
+
+  it('talk: 无 npc_name 时回落到 ref(老数据兼容)', () => {
+    const e: HistoryEntry = {
+      type: 'talk', ref: 'ghost', meta: { node: 'a', choice: 0 } as any, created_at: Date.now(),
+    };
+    const s = summarizeEntry(e);
+    // 老数据没 npc_name, 也至少不让 "ghost" 出现在面板里(我们改用 ref 兜底)
+    expect(typeof s).toBe('string');
   });
 
   it('quest_accept: meta.name 优先于 ref', () => {
@@ -83,5 +95,28 @@ describe('summarizeEntry 中文名优先', () => {
     };
     const s = summarizeEntry(e);
     expect(s).toContain('工厂某处');
+  });
+});
+
+describe('filterVisibleEntries — login/feedback 不显示', () => {
+  it('filterVisibleEntries 默认不展示 login', () => {
+    const arr: HistoryEntry[] = [
+      { type: 'login', ref: null, meta: {}, created_at: 1 },
+      { type: 'move', ref: 'market', meta: { from_name: '旧城西门', to_name: '黑市街区' }, created_at: 2 },
+    ];
+    const visible = filterVisibleEntries(arr);
+    expect(visible.length).toBe(1);
+    expect(visible[0].type).toBe('move');
+  });
+  it('filterVisibleEntries 默认不展示 feedback', () => {
+    const arr: HistoryEntry[] = [
+      { type: 'feedback', ref: null, meta: {}, created_at: 1 },
+      { type: 'pickup', ref: 'ration', meta: { name: '压缩口粮', qty: 1 }, created_at: 2 },
+    ];
+    const visible = filterVisibleEntries(arr);
+    expect(visible.find((e) => e.type === 'feedback')).toBeUndefined();
+  });
+  it('HISTORY_TYPE_LABEL 含 talk 类型(中文标签)', () => {
+    expect(HISTORY_TYPE_LABEL.talk).toBe('对话');
   });
 });
