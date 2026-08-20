@@ -7,10 +7,14 @@ import { logEvent } from '../lib/events';
 import { getNickname } from '../lib/nickname';
 import { pickHint } from '../lib/hints';
 import { tickDanger } from '../lib/rules';
+import { applyWeather, weatherToView } from '../lib/weather';
 
 export async function onRequestGet(context: any) {
   const s = await getState(context.env.DB, context.data.playerId);
   const nick = await getNickname(context.env.DB, context.data.playerId);
+  // v2.0.3 P2: 每天第一次 state 时,把当日天气算出来 + 缓存到 flags
+  const weather = applyWeather(s);
+  await saveState(context.env.DB, s);
   // 静默判断是否有可推暗线提示
   const hint = await pickHint(context.env.DB, context.data.playerId, s, s.area).catch(() => null);
   if (hint) {
@@ -24,7 +28,10 @@ export async function onRequestGet(context: any) {
       area_name: hint.area.name,
     });
   }
-  return json({ ...viewState(s, nick), hint: hint ?? null });
+  // v2.0.3 P2: 当前区域如果属于 danger 区,把天气偏移加到危险显示上(实际伤害走 rules,不重复)
+  const baseArea = (s.area === 'metro' || s.area === 'undernet') ? s.area : null;
+  const weatherView = weatherToView(weather, baseArea as any);
+  return json({ ...viewState(s, nick), hint: hint ?? null, weather: weatherView });
 }
 
 export async function onRequestPost(context: any) {

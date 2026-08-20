@@ -12,6 +12,8 @@ import { MilestoneModal } from './components/MilestoneModal';
 import { WorldEventModal } from './components/WorldEventModal';
 import { EndingChoiceModal } from './components/EndingChoiceModal';
 import { PuzzlePanel } from './components/PuzzlePanel';
+import { MailDrawer } from './components/MailDrawer';
+import { CraftDrawer } from './components/CraftDrawer';
 
 type ToastCls = '' | 'good' | 'bad' | 'warn' | 'secret';
 
@@ -54,6 +56,14 @@ export default function App() {
   const [helpBusy, setHelpBusy] = useState(false);
   // v2.0.3 P2: 解谜面板
   const [showPuzzle, setShowPuzzle] = useState(false);
+  // v2.0.3 P2: 信箱
+  const [showMail, setShowMail] = useState(false);
+  const [mailUnread, setMailUnread] = useState(0);
+  const [mails, setMails] = useState<Array<{ id: string; from: string; subject: string; body: string; read: boolean }>>([]);
+  // v2.0.3 P2: 制作
+  const [showCraft, setShowCraft] = useState(false);
+  // v2.0.3 P2: 天气(由 view.weather 传入)
+  // (直接读 view.weather,不另设 state)
   // 比较上次与本次 inventory,得到"本次拾取的新物品 id"
   const lastInventoryRef = useRef<string[]>([]);
   // 已经在这次 session 看过的 world_event id,避免 refresh 后重弹
@@ -70,6 +80,17 @@ export default function App() {
       console.error('[history] load failed', e);
     } finally {
       setHistLoading(false);
+    }
+  }, []);
+
+  // v2.0.3 P2: 拉信箱 + 更新未读 badge
+  const refreshMail = useCallback(async () => {
+    try {
+      const r = await api.listMails();
+      setMails(r.mails || []);
+      setMailUnread(r.unread || 0);
+    } catch (e: any) {
+      console.error('[mail] load failed', e);
     }
   }, []);
 
@@ -102,11 +123,12 @@ export default function App() {
     inited.current = true;
     refresh();
     fetchHistory(20);
+    refreshMail();
     // v2.0.3: 一次性拉物品定义列表(公共 endpoint)用于首拾 tip
     api.items()
       .then((r) => setItemDefs(r.items || []))
       .catch((e) => console.error('[items]', e));
-  }, [refresh, fetchHistory]);
+  }, [refresh, fetchHistory, refreshMail]);
 
   // v2.0.3: 监听 view.mainProgress 变化,弹主线里程碑过场
   const lastMilestoneShown = useRef(0);
@@ -328,10 +350,25 @@ export default function App() {
       <main className="grid">
         {/* 区域探索 */}
         <section className="panel area">
-          <h2>{view.area.name}</h2>
+          <h2>{view.area.name}
+            {view.weather && (
+              <span className="weather-chip" title={view.weather.blurb}>
+                {view.weather.icon} {view.weather.name}
+                {view.weather.dangerOffset !== 0 && (
+                  <span className="weather-mod">
+                    {' '}(辐射 {view.weather.dangerOffset > 0 ? '+' : ''}{view.weather.dangerOffset})
+                  </span>
+                )}
+              </span>
+            )}
+          </h2>
           <p className="desc">{view.area.desc}</p>
           {view.area.danger > 0 && (
-            <p className="warn">⚠ 辐射危险区(进入 +{view.area.danger} 辐射 / -{Math.round(view.area.danger / 2)} 生命;滞留每 10 秒再加 1 辐射 / -1 生命)</p>
+            <p className="warn">⚠ 辐射危险区(进入 +{view.area.danger} 辐射 / -{Math.round(view.area.danger / 2)} 生命;滞留每 10 秒再加 1 辐射 / -1 生命)
+              {view.weather && view.weather.dangerOffset !== 0 && (
+                <span className="small muted"> · 天气影响 {view.weather.dangerOffset > 0 ? '+' : ''}{view.weather.dangerOffset}</span>
+              )}
+            </p>
           )}
           <div className="row">
             <button className="act" disabled={busy} onClick={() => act(async () => {
@@ -500,6 +537,12 @@ export default function App() {
         <button className="footer-link" onClick={() => setShowPuzzle(true)}>
           🧩 解谜
         </button>
+        <button className="footer-link" onClick={() => setShowCraft(true)}>
+          🔧 制作
+        </button>
+        <button className="footer-link" onClick={() => setShowMail(true)}>
+          📮 信箱{mailUnread > 0 && <span className="badge-inline">{mailUnread}</span>}
+        </button>
         <button className="footer-link" onClick={() => setShowFeedback(true)}>
           📬 反馈意见
         </button>
@@ -645,6 +688,25 @@ export default function App() {
           onClose={() => setShowPuzzle(false)}
           onSolved={() => { refresh(); }}
           busy={busy}
+        />
+      )}
+
+      {/* v2.0.3 P2: 信箱 */}
+      {showMail && (
+        <MailDrawer
+          mails={mails}
+          unread={mailUnread}
+          onClose={() => setShowMail(false)}
+          onChanged={() => refreshMail()}
+        />
+      )}
+
+      {/* v2.0.3 P2: 制作 */}
+      {showCraft && (
+        <CraftDrawer
+          busy={busy}
+          onClose={() => setShowCraft(false)}
+          onCrafted={(m) => { refresh(); toastMsg(m, 'good'); setShowCraft(false); }}
         />
       )}
 

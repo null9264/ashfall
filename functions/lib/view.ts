@@ -123,6 +123,8 @@ export function viewState(s: PlayerState, nickname: string | null, before?: Play
       { id: 'p_sequence', title: '三色序列', hint: '红→蓝→绿。地铁里的孩子知道顺序。', done: !!s.flags['puzzle_p_sequence'] },
       { id: 'p_wordcode', title: '照片背后的字', hint: '哑女照片背面写着 4 个字。', done: !!s.flags['puzzle_p_wordcode'] },
     ],
+    // v2.0.3 P2: 天气(由 state endpoint 计算后追加)
+    weather: undefined as any,
   };
   // v2.0.2: 如果传入了 before,附上变化清单给前端
   if (before) {

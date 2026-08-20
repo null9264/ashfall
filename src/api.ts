@@ -78,6 +78,11 @@ export const api = {
     req('/api/puzzle', 'POST', { puzzleId, answer }) as Promise<
       { ok: boolean; reason?: string; code?: string; hint?: string; changes?: any; view?: ViewState }
     >,
+  // v2.0.3 P2: 邮件 / 制作
+  listMails: () => req('/api/mail', 'GET') as Promise<{ mails: Array<{ id: string; from: string; subject: string; body: string; read: boolean }>; unread: number }>,
+  readMail: (id: string) => req('/api/mail', 'POST', { id }) as Promise<{ ok: boolean }>,
+  listRecipes: () => req('/api/craft', 'GET') as Promise<{ recipes: Array<{ id: string; name: string; desc: string; consumes: Record<string, number>; produces: any; ok: boolean; reason?: string }> }>,
+  doCraft: (recipeId: string) => req('/api/craft', 'POST', { recipeId }) as Promise<{ ok: boolean; reason?: string; code?: string; hint?: string; changes?: any; view?: ViewState }>,
 };
 
 // ===== Admin =====

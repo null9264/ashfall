@@ -56,6 +56,8 @@ export interface ViewState {
   endings_seen?: string[];
   // v2.0.3 P2: 解谜面板
   puzzles?: { id: 'p_lockbox' | 'p_sequence' | 'p_wordcode'; title: string; hint: string; done: boolean }[];
+  // v2.0.3 P2: 天气
+  weather?: { id: string; name: string; icon: string; blurb: string; dangerOffset: number } | null;
 }
 
 export interface HintItem {
