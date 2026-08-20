@@ -1457,6 +1457,21 @@ button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
   font-weight: bold;
   animation: transitSlide 0.7s ease;
 }
+
+/* v2.0.3 P1: 求助按钮 + 求助结果 modal */
+.help-btn {
+  margin-top: 10px;
+  border-color: rgba(255, 170, 85, 0.5);
+  color: #ffaa55;
+  background: rgba(255, 170, 85, 0.08);
+}
+.help-btn:hover:not(:disabled) {
+  background: rgba(255, 170, 85, 0.18);
+  border-color: #ffaa55;
+}
+.help-modal .speaker {
+  color: #ffaa55;
+}
 @keyframes transitSlide {
   0%   { letter-spacing: 0px; opacity: 0; }
   20%  { letter-spacing: 6px; opacity: 1; }

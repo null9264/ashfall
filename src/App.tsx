@@ -48,6 +48,9 @@ export default function App() {
   const [endingPick, setEndingPick] = useState<NonNullable<ViewState['endings']['available']> | null>(null);
   // v2.0.3 P1: 区域切换的短暂过渡(显示地点名)
   const [transit, setTransit] = useState<string | null>(null);
+  // v2.0.3 P1: "我卡住了" 主动求助 — 服务端返回一条无视冷却的提示
+  const [help, setHelp] = useState<{ id: string; kind: 'hidden' | 'quest' | 'npc'; text: string; area: { id: string; name: string } } | null>(null);
+  const [helpBusy, setHelpBusy] = useState(false);
   // 比较上次与本次 inventory,得到"本次拾取的新物品 id"
   const lastInventoryRef = useRef<string[]>([]);
   // 已经在这次 session 看过的 world_event id,避免 refresh 后重弹
@@ -357,6 +360,25 @@ export default function App() {
               }}>{n.name}</button>
             ))}
           </div>
+          {/* v2.0.3 P1: 玩家主动求助 — 无视冷却直接给一条方向提示 */}
+          <button
+            className="act help-btn"
+            disabled={busy || helpBusy}
+            onClick={async () => {
+              setHelpBusy(true);
+              try {
+                const r: any = await api.help();
+                setHelp(r.help || null);
+              } catch (e: any) {
+                toastMsg(e?.message || '求助失败', 'bad');
+              } finally {
+                setHelpBusy(false);
+              }
+            }}
+            title="向档案管理员求一条方向性提示"
+          >
+            {helpBusy ? '查询中…' : '🆘 我卡住了'}
+          </button>
           <p className="muted small">已探索：{view.unlockedAreas.join('、')}</p>
         </section>
 
@@ -608,6 +630,20 @@ export default function App() {
           }}
           onClose={() => setEndingPick(null)}
         />
+      )}
+
+      {/* v2.0.3 P1: "我卡住了" 求助结果 */}
+      {help && (
+        <div className="modal" onClick={() => setHelp(null)}>
+          <div className="modal-box help-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="speaker">🆘 档案管理员 · 提示</div>
+            <p className="dialog-text">{help.text}</p>
+            <p className="small muted">指向：{help.area.name}</p>
+            <div className="row col">
+              <button className="dlg-opt primary" onClick={() => setHelp(null)}>知道了</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && <div className={'toast ' + toastCls}>{toast}</div>}

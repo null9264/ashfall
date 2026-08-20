@@ -164,3 +164,28 @@ export function hintMeta(h: HintItem): Record<string, any> {
     area_name: h.area.name,
   };
 }
+
+// v2.0.3 P1: 玩家主动点 "我卡住了" 时调用,无视冷却与卡住阈值,直接返回
+// 当前最相关的一条提示(区域/任务/隐藏/NPC),给陷入迷茫的玩家一份向导
+export function pickHelp(
+  playerState: PlayerState,
+  currentArea: AreaId,
+): HintItem | null {
+  const candidates = collectCandidates(playerState, currentArea);
+  if (candidates.length === 0) {
+    // 兜底:没有 unmet 候选就给个当前区域方向性提示
+    const here = AREAS[currentArea];
+    return {
+      id: `help:fallback`,
+      kind: 'npc',
+      text: `【求助】你现在在${here.name},先四处翻翻:试试「搜寻物资」/「仔细搜寻」,再和能对话的人聊聊。`,
+      area: { id: currentArea, name: here.name },
+      refs: { kind: 'npc', ref: 'fallback' },
+    };
+  }
+  const kindRank: Record<string, number> = { hidden: 0, quest: 1, npc: 2 };
+  const ranked = candidates
+    .map((c) => ({ c, d: hopDistance(currentArea, c.area.id), rank: kindRank[c.kind] }))
+    .sort((a, b) => (a.d - b.d) || (a.rank - b.rank));
+  return ranked[0].c;
+}

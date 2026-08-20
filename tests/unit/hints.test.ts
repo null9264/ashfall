@@ -146,3 +146,55 @@ describe('hintMeta 序列化', () => {
     expect(meta.area_name).toBe('废弃工厂');
   });
 });
+
+// v2.0.3 P1: pickHelp — 玩家主动求助时无视冷却直接给提示
+import { pickHelp } from '../../functions/lib/hints';
+describe('pickHelp（玩家主动求助）', () => {
+  it('空玩家也能拿到一条兜底提示,不会卡住', () => {
+    const s = makeState();
+    const h = pickHelp(s, 'gate');
+    expect(h).not.toBeNull();
+    expect(h!.text.length).toBeGreaterThan(4);
+    expect(h!.area.id).toBe('gate');
+  });
+
+  it('隐藏要素前置已满足时,优先推该隐藏要素的方向', () => {
+    const s = makeState();
+    // h_undermap 的前置是 knows_cabinet + met_foreman
+    s.flags['knows_cabinet'] = true;
+    s.flags['met_foreman'] = true;
+    s.area = 'gate';
+    const h = pickHelp(s, 'gate');
+    expect(h).not.toBeNull();
+    // 工厂藏地下地图 → 应指向 factory
+    expect(h!.area.id).toBe('factory');
+  });
+
+  it('任务 active 且方法可完成时,推荐任务摘要', () => {
+    const s = makeState();
+    // q_search1 默认无前置,接取后即可完成
+    s.quests['q_search1'] = { status: 'active' };
+    const h = pickHelp(s, 'gate');
+    expect(h).not.toBeNull();
+    // 当前区域 gate → 距离为 0,推荐指向 gate 的任务
+    expect(h!.area.id).toBe('gate');
+  });
+
+  it('返回的提示文本含「线索/未尽/风声/求助」之一', () => {
+    const s = makeState();
+    s.quests['q_search1'] = { status: 'active' };
+    const h = pickHelp(s, 'gate');
+    expect(h).not.toBeNull();
+    expect(h!.text).toMatch(/线索|未尽|风声|求助/);
+  });
+
+  it('返回的 hint 结构完整(id/kind/area/refs 都齐)', () => {
+    const s = makeState();
+    const h = pickHelp(s, 'gate');
+    expect(h).not.toBeNull();
+    expect(h!.id).toBeTruthy();
+    expect(['hidden', 'quest', 'npc']).toContain(h!.kind);
+    expect(h!.refs.kind).toBeTruthy();
+    expect(h!.refs.ref).toBeTruthy();
+  });
+});
