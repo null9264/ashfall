@@ -505,6 +505,11 @@ export const HIDDENS: HiddenDef[] = [
   { id: 'h_easter', name: '旧收音机', area: 'gate', hint: '城门边一台早就不响的收音机，还在闪灯。',
     requires: [{ flag: 'easter_click' }],
     effects: [{ flag: 'easter' }, { attr: { reputation: 1 } }] },
+  // v2.0.3 钟声 world event — 拿到真相碎片之后回到地下深处听到的钟声
+  // 这是个隐藏情感节点,玩家看到它就算完成一个里程碑
+  { id: 'h_bell', name: '钟声响起', area: 'undernet', hint: '你听见了不该在这里响起的钟声。',
+    requires: [{ flag: 'has_echo_core' }, { flag: 'has_truth' }, { flag: 'got_map' }, { flag: 'found_bunker' }],
+    effects: [{ flag: 'heard_bell' }, { attr: { radiation: -20, reputation: 8 } }] },
 ];
 
 // 结局（服务端判定）
@@ -519,6 +524,9 @@ export const ENDINGS: EndingDef[] = [
     ],
     requires: [{ attrs: { reputation: 20 } }, { flag: 'camp_found' }, { flag: 'exposed' }],
     hint: '需要：声望足够高，找到密室，并公开真相。',
+    cost: '你失去：回去的路。',
+    keeps: '留下：小月的笑声、林婶给你添的半碗汤、老吴记得你的名字。',
+    tone_color: '#88dd88',
   },
   { id: 'e_hermit', title: '结局 · 独善', tone: '平静',
     passages: [
@@ -529,6 +537,9 @@ export const ENDINGS: EndingDef[] = [
     ],
     requires: [{ flag: 'found_yue' }, { flag: 'met_foreman' }, { attrs: { reputation: -5 } }],
     hint: '需要：把小月带回来、见过监工、声望不太高。',
+    cost: '你失去：让城里人记得真相的机会。',
+    keeps: '留下：你自己。少数几次安稳的夜。',
+    tone_color: '#ddcc88',
   },
   { id: 'e_conspirator', title: '结局 · 揭穿', tone: '凛冽',
     passages: [
@@ -539,6 +550,9 @@ export const ENDINGS: EndingDef[] = [
     ],
     requires: [{ flag: 'exposed' }, { flag: 'has_truth' }],
     hint: '需要：公开真相，并收集到全部真相碎片。',
+    cost: '你失去：安全的城门外圈。',
+    keeps: '留下：真相在地上，不在地底。',
+    tone_color: '#88c8ff',
   },
   { id: 'e_warlord', title: '结局 · 暴君', tone: '荒芜',
     passages: [
@@ -549,6 +563,9 @@ export const ENDINGS: EndingDef[] = [
     ],
     requires: [{ flag: 'crushed' }, { attrs: { reputation: -10 } }],
     hint: '需要：暴力镇压知情者，并保持足够冷血。',
+    cost: '你失去：城里的所有朋友。',
+    keeps: '留下：灰烬城里所有装不进棺材的人。',
+    tone_color: '#dd8888',
   },
   { id: 'e_echo', title: '结局 · 回声', tone: '永恒',
     passages: [
@@ -560,6 +577,9 @@ export const ENDINGS: EndingDef[] = [
     ],
     requires: [{ flag: 'took_echo' }, { flag: 'found_bunker' }, { flag: 'got_map' }, { flag: 'has_truth' }, { flag: 'clue_undermap' }],
     hint: '需要：拿到回声核心、打开密室、拿到地图、真相齐全。',
+    cost: '你失去：正常的归宿，城里每个人都会认识你。',
+    keeps: '留下：你们所有人的声音。',
+    tone_color: '#c47aff',
   },
 ];
 

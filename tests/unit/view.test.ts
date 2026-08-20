@@ -177,4 +177,55 @@ describe('viewState', () => {
       expect(n.trust).toBeLessThanOrEqual(5);
     }
   });
+
+  // v2.0.3 P1: 结局 cost/keeps + 钟声 world event
+  it('available 结局都包含 cost/keeps/tone_color', () => {
+    const s = makeState();
+    s.flags['exposed'] = true;
+    s.flags['camp_found'] = true;
+    s.attrs.reputation = 25;
+    const v = viewState(s, 'x');
+    expect(v.endings.available.length).toBeGreaterThan(0);
+    for (const e of v.endings.available) {
+      expect(e.cost).toBeTruthy();
+      expect(e.keeps).toBeTruthy();
+      expect(e.tone_color).toBeTruthy();
+    }
+  });
+
+  it('worldEvent 在 undernet + 满足 h_bell 前置时返回 modal 内容', () => {
+    const s = makeState();
+    s.area = 'undernet';
+    s.flags['has_echo_core'] = true;
+    s.flags['has_truth'] = true;
+    s.flags['got_map'] = true;
+    s.flags['found_bunker'] = true;
+    const v = viewState(s, 'x');
+    expect(v.worldEvent).toBeTruthy();
+    expect(v.worldEvent?.id).toBe('w_bell');
+    expect(v.worldEvent?.title).toContain('钟');
+  });
+
+  it('worldEvent 在 heard_bell 已设后不再推', () => {
+    const s = makeState();
+    s.area = 'undernet';
+    s.flags['has_echo_core'] = true;
+    s.flags['has_truth'] = true;
+    s.flags['got_map'] = true;
+    s.flags['found_bunker'] = true;
+    s.flags['heard_bell'] = true;
+    const v = viewState(s, 'x');
+    expect(v.worldEvent).toBeNull();
+  });
+
+  it('worldEvent 在非 undernet 不返回', () => {
+    const s = makeState();
+    s.area = 'gate';
+    s.flags['has_echo_core'] = true;
+    s.flags['has_truth'] = true;
+    s.flags['got_map'] = true;
+    s.flags['found_bunker'] = true;
+    const v = viewState(s, 'x');
+    expect(v.worldEvent).toBeNull();
+  });
 });

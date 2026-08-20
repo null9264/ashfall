@@ -68,6 +68,9 @@ export const api = {
     req('/api/state', 'POST', { action: 'item_tip_seen', itemId }) as Promise<ViewState>,
   // v2.0.3: 高危区驻留心跳 — 仅在后端危险区有效,其他地方是空 ack
   heartbeat: () => req('/api/state', 'POST', { action: 'heartbeat' }) as Promise<ViewState>,
+  // v2.0.3: 玩家听过钟声 — ack 后服务端把 heard_bell 设上,避免重复推
+  ackWorldEvent: (id: string) =>
+    req('/api/state', 'POST', { action: 'world_event_seen', eventId: id }) as Promise<ViewState>,
 };
 
 // ===== Admin =====

@@ -61,6 +61,21 @@ export async function onRequestPost(context: any) {
       console.log('[heartbeat] danger tick', { area: s.area, hp: s.attrs.hp, radiation: s.attrs.radiation });
     }
     // 不论是否扣血,heartbeat 都把 last_heartbeat 推进以防滥用(此处简单忽略)
+  } else if (action === 'world_event_seen') {
+    // v2.0.3: 玩家看了钟声,标记 heard_bell —— 同时把 h_bell 的效果也落库
+    const eventId = String(body.eventId || '');
+    if (eventId === 'w_bell' && !s.flags['heard_bell']) {
+      s.flags['heard_bell'] = true;
+      // 应用 effects: 减 20 辐射 + 8 声望
+      const cRadiation = Math.max(0, (s.attrs.radiation ?? 0) - 20);
+      s.attrs.radiation = cRadiation;
+      const cRep = Math.max(0, (s.attrs.reputation ?? 0) + 8);
+      s.attrs.reputation = cRep;
+      // v2.0.3: 写入 milestones_shown 也写一份用于以后 admin 追溯
+      if (!Array.isArray(s.milestones_shown)) s.milestones_shown = [];
+      if (!s.milestones_shown.includes('w_bell')) s.milestones_shown.push('w_bell');
+      changed = true;
+    }
   }
   if (changed) await saveState(context.env.DB, s);
   // 不论是否真的改了，都返回最新 view 给前端当 ack

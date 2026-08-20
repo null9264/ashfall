@@ -1,5 +1,5 @@
 // 组装前端可见视图（仅暴露玩家应知的进度，不泄露全部 flag/条件）
-import type { PlayerState } from './types';
+import type { PlayerState, AreaDef, Req } from './types';
 import { AREAS, NPCS, QUESTS, HIDDENS, ENDINGS } from './content';
 import { evaluateEndings, diffStates } from './rules';
 
@@ -31,9 +31,34 @@ function inferStance(npcId: string, s: PlayerState): 'ally' | 'witness' | 'hosti
   }
 }
 
+// v2.0.3 钟声 world event — 满足 h_bell 全部前置且未听过时,在 undernet 推一个事件给前端弹窗
+function meetReqShim(s: PlayerState, r: Req): boolean {
+  if (r.flag) return !!s.flags[r.flag];
+  return true;
+}
+
+function checkWorldEvents(s: PlayerState, area: AreaDef): { id: string; title: string; body: string } | null {
+  if (s.flags['heard_bell']) return null;
+  if (area.id !== 'undernet') return null;
+  const need: Req[] = [
+    { flag: 'has_echo_core' },
+    { flag: 'has_truth' },
+    { flag: 'got_map' },
+    { flag: 'found_bunker' },
+  ];
+  for (const r of need) if (!meetReqShim(s, r)) return null;
+  return {
+    id: 'w_bell',
+    title: '钟声响起',
+    body: '你听见了来自城市深处的钟声。它先是一声,然后两声,然后连成一片。\n\n回声核心在你胸口振着,像在回应。\n\n那些被删除的名字,现在每个都在钟声里。',
+  };
+}
+
 export function viewState(s: PlayerState, nickname: string | null, before?: PlayerState) {
   const area = AREAS[s.area];
   const endings = evaluateEndings(s);
+  // v2.0.3: 钟声事件
+  const worldEvent = checkWorldEvents(s, area);
   const base = {
     nickname,
     area: {
@@ -62,7 +87,15 @@ export function viewState(s: PlayerState, nickname: string | null, before?: Play
     })),
     hiddenFound: HIDDENS.filter((h) => s.flags[h.id]).map((h) => h.name),
     endings: {
-      available: endings.available.map((e) => ({ id: e.id, title: e.title })),
+      available: endings.available.map((e) => ({
+        id: e.id,
+        title: e.title,
+        tone: e.tone,
+        // v2.0.3: 把 cost/keeps 一并暴露给前端 modal
+        cost: e.cost,
+        keeps: e.keeps,
+        tone_color: e.tone_color,
+      })),
       locked: endings.locked.map((e) => ({
         id: e.id,
         title: e.title,
@@ -79,6 +112,8 @@ export function viewState(s: PlayerState, nickname: string | null, before?: Play
     firstTime: !s.tutorial_seen,
     // v2.0.3: 当前天数
     day: s.day ?? 1,
+    // v2.0.3: 钟声 world event(玩家满足条件时返回 modal 内容;前端展示一次)
+    worldEvent: worldEvent,
   };
   // v2.0.2: 如果传入了 before,附上变化清单给前端
   if (before) {

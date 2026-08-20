@@ -9,6 +9,8 @@ import { MainProgress } from './components/MainProgress';
 import { ItemTipModal } from './components/ItemTipModal';
 import { EndingPreviewModal } from './components/EndingPreviewModal';
 import { MilestoneModal } from './components/MilestoneModal';
+import { WorldEventModal } from './components/WorldEventModal';
+import { EndingChoiceModal } from './components/EndingChoiceModal';
 
 type ToastCls = '' | 'good' | 'bad' | 'warn' | 'secret';
 
@@ -41,8 +43,15 @@ export default function App() {
   const [tipItem, setTipItem] = useState<string | null>(null);
   const [milestone, setMilestone] = useState<{ title: string; body: string; step: number; total: number } | null>(null);
   const [showEndingPreview, setShowEndingPreview] = useState(false);
+  const [worldEvent, setWorldEvent] = useState<{ id: string; title: string; body: string } | null>(null);
+  // v2.0.3 P1: 选结局前的 modal(显示 cost/keeps)
+  const [endingPick, setEndingPick] = useState<NonNullable<ViewState['endings']['available']> | null>(null);
+  // v2.0.3 P1: 区域切换的短暂过渡(显示地点名)
+  const [transit, setTransit] = useState<string | null>(null);
   // 比较上次与本次 inventory,得到"本次拾取的新物品 id"
   const lastInventoryRef = useRef<string[]>([]);
+  // 已经在这次 session 看过的 world_event id,避免 refresh 后重弹
+  const seenWorldEventsRef = useRef<Set<string>>(new Set());
 
   // 简单取数（不弹 toast 也不刷状态外的副作用）
   const fetchHistory = useCallback(async (limit = 20) => {
@@ -114,6 +123,18 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view?.mainProgress]);
+
+  // v2.0.3 P1: 监听 worldEvent,弹钟声等一次性事件 modal
+  useEffect(() => {
+    if (!view?.worldEvent) return;
+    const ev = view.worldEvent;
+    if (seenWorldEventsRef.current.has(ev.id)) return;
+    seenWorldEventsRef.current.add(ev.id);
+    // 推一个 ack 给服务端,避免下次 refresh 又推
+    api.ackWorldEvent(ev.id).catch((e) => console.error('[world_event] ack failed', e));
+    setWorldEvent(ev);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view?.worldEvent?.id]);
 
   // v2.0.3: 高危区驻留心跳 — 每 10s 通知服务端一次;非危险区服务端 no-op
   // 只在看得到 view 时才跑,避免登录前空跑
@@ -328,7 +349,12 @@ export default function App() {
           <h3>前往</h3>
           <div className="row wrap">
             {view.area.neighbors.map((n) => (
-              <button key={n.id} className="nav" disabled={busy} onClick={() => act(() => api.move(n.id))}>{n.name}</button>
+              <button key={n.id} className="nav" disabled={busy} onClick={() => {
+                // v2.0.3 P1: 区域切换时短暂显示 transit 层(避免突兀)
+                setTransit(n.name);
+                setTimeout(() => setTransit(null), 700);
+                act(() => api.move(n.id));
+              }}>{n.name}</button>
             ))}
           </div>
           <p className="muted small">已探索：{view.unlockedAreas.join('、')}</p>
@@ -413,10 +439,10 @@ export default function App() {
           <h2>结局</h2>
           {view.endings.available.length === 0 && <p className="muted small">你的选择还在累积，结局尚未成形。</p>}
           {view.endings.available.map((e) => (
-            <button key={e.id} className="end-btn" disabled={busy} onClick={() => act(async () => {
-              try { const r: any = await api.endingChoose(e.id); setView({ ...view, ending: e.id, endingDetail: r.ending }); return undefined; }
-              catch (e2: any) { toastMsg(e2?.message); throw e2; }
-            })}>走向 · {e.title}</button>
+            <button key={e.id} className="end-btn" disabled={busy} onClick={() => {
+              // v2.0.3 P1:先弹 choice modal,看清楚 cost/keeps 再确认
+              setEndingPick(view.endings.available);
+            }}>走向 · {e.title}</button>
           ))}
           {view.endings.available.length === 0 && view.endings.locked.length > 0 && (
             <div className="locked-endings-wrap">
@@ -535,11 +561,52 @@ export default function App() {
         />
       )}
 
+      {/* v2.0.3 P1: 区域切换过渡层 */}
+      {transit && (
+        <div className="transit-overlay">
+          <div className="transit-label">走向 · {transit}</div>
+        </div>
+      )}
+
       {/* v2.0.3: 锁定结局的方向提示 */}
       {showEndingPreview && (
         <EndingPreviewModal
           endings={view.endings.locked}
           onClose={() => setShowEndingPreview(false)}
+        />
+      )}
+
+      {/* v2.0.3 P1: 世界事件 modal */}
+      {worldEvent && (
+        <WorldEventModal
+          event={worldEvent}
+          onClose={() => {
+            setWorldEvent(null);
+            // 重新拉 state 让 heard_bell 也生效,然后应用 effects(已 ack 过)
+            refresh();
+          }}
+        />
+      )}
+
+      {/* v2.0.3 P1: 选结局前的回顾 modal */}
+      {endingPick && (
+        <EndingChoiceModal
+          endings={endingPick}
+          busy={busy}
+          onChoose={(id) => {
+            setEndingPick(null);
+            act(async () => {
+              try {
+                const r: any = await api.endingChoose(id);
+                setView({ ...view, ending: id, endingDetail: r.ending });
+                return undefined;
+              } catch (e2: any) {
+                toastMsg(e2?.message);
+                throw e2;
+              }
+            });
+          }}
+          onClose={() => setEndingPick(null)}
         />
       )}
 

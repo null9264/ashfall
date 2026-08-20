@@ -37,7 +37,7 @@ export interface ViewState {
   }[];
   npcs: { id: string; name: string; blurb: string; trust?: number; stance?: 'ally' | 'witness' | 'hostile' | 'neutral' }[];
   hiddenFound: string[];
-  endings: { available: { id: string; title: string }[]; locked: { id: string; title: string; hint: string }[] };
+  endings: { available: { id: string; title: string; tone: string; cost?: string; keeps?: string; tone_color?: string }[]; locked: { id: string; title: string; hint: string }[] };
   ending: string | null;
   endingDetail: { id: string; title: string; tone: string; passages: string[] } | null;
   changes?: AttrChanges;
@@ -49,6 +49,8 @@ export interface ViewState {
   firstTime?: boolean;
   // v2.0.3: 当前天数
   day?: number;
+  // v2.0.3: 世界事件(钟声等)— view 一次性返回,前端弹一次后用 ack 标记
+  worldEvent?: { id: string; title: string; body: string } | null;
 }
 
 export interface HintItem {

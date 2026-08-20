@@ -104,6 +104,11 @@ export interface EndingDef {
   requires: Req[];
   // v2.0.3: 给玩家的进度提示(不暴露具体 flag 名)
   hint?: string;
+  // v2.0.3: 选这个结局会失去什么 / 留下什么 — 让玩家看清代价
+  cost?: string;
+  keeps?: string;
+  // v2.0.3: 结局色调(用于 modal 配色)
+  tone_color?: string;
 }
 
 // 玩家状态（全部存 D1）
