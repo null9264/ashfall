@@ -114,6 +114,15 @@ export function viewState(s: PlayerState, nickname: string | null, before?: Play
     day: s.day ?? 1,
     // v2.0.3: 钟声 world event(玩家满足条件时返回 modal 内容;前端展示一次)
     worldEvent: worldEvent,
+    // v2.0.3 P2: 多周目
+    loop: s.loop ?? 1,
+    endings_seen: Array.isArray(s.endings_seen) ? s.endings_seen : [],
+    // v2.0.3 P2: 解谜面板数据(每个谜题显示给玩家一次,完了标 done)
+    puzzles: [
+      { id: 'p_lockbox', title: '监工的柜子', hint: '4 位数字锁。提示在老吴的对话里。', done: !!s.flags['puzzle_p_lockbox'] },
+      { id: 'p_sequence', title: '三色序列', hint: '红→蓝→绿。地铁里的孩子知道顺序。', done: !!s.flags['puzzle_p_sequence'] },
+      { id: 'p_wordcode', title: '照片背后的字', hint: '哑女照片背面写着 4 个字。', done: !!s.flags['puzzle_p_wordcode'] },
+    ],
   };
   // v2.0.2: 如果传入了 before,附上变化清单给前端
   if (before) {

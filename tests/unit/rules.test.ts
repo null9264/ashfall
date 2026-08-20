@@ -468,3 +468,48 @@ describe('结局判定 evaluateEndings', () => {
     // 真实 rules 也是用 clampAttr; 行为一致
   });
 });
+
+// v2.0.3 P2: 解谜 checkPuzzle
+import { checkPuzzle } from '../../functions/lib/rules';
+
+describe('checkPuzzle', () => {
+  it('p_lockbox 正确密码 0307 → ok', () => {
+    const r = checkPuzzle('p_lockbox', '0307');
+    expect(r.ok).toBe(true);
+    expect(r.effects).toBeDefined();
+    expect(r.effects!.some((e: any) => e.flag === 'unlock_lockbox')).toBe(true);
+  });
+
+  it('p_lockbox 错密码 → fail', () => {
+    expect(checkPuzzle('p_lockbox', '1234').ok).toBe(false);
+    expect(checkPuzzle('p_lockbox', 'abcd').ok).toBe(false);
+    expect(checkPuzzle('p_lockbox', '').ok).toBe(false);
+  });
+
+  it('p_sequence 红蓝绿正确 → ok', () => {
+    const r = checkPuzzle('p_sequence', ['red', 'blue', 'green']);
+    expect(r.ok).toBe(true);
+    expect(r.effects!.some((e: any) => e.flag === 'seq_done')).toBe(true);
+  });
+
+  it('p_sequence 错序 → fail', () => {
+    expect(checkPuzzle('p_sequence', ['blue', 'red', 'green']).ok).toBe(false);
+    expect(checkPuzzle('p_sequence', ['red', 'blue']).ok).toBe(false); // 长度不够
+  });
+
+  it('p_wordcode 接受「不想让你看见」→ ok,给 truth_photo', () => {
+    const r = checkPuzzle('p_wordcode', '不想让你看见');
+    expect(r.ok).toBe(true);
+    expect(r.effects!.some((e: any) => e.flag === 'truth_photo')).toBe(true);
+  });
+
+  it('p_wordcode 其他回答 → fail', () => {
+    expect(checkPuzzle('p_wordcode', '随便').ok).toBe(false);
+    expect(checkPuzzle('p_wordcode', '').ok).toBe(false);
+  });
+
+  it('未知 puzzleId → fail', () => {
+    const r = checkPuzzle('xxx' as any, 'y');
+    expect(r.ok).toBe(false);
+  });
+});

@@ -51,6 +51,11 @@ export interface ViewState {
   day?: number;
   // v2.0.3: 世界事件(钟声等)— view 一次性返回,前端弹一次后用 ack 标记
   worldEvent?: { id: string; title: string; body: string } | null;
+  // v2.0.3 P2: 多周目
+  loop?: number;
+  endings_seen?: string[];
+  // v2.0.3 P2: 解谜面板
+  puzzles?: { id: 'p_lockbox' | 'p_sequence' | 'p_wordcode'; title: string; hint: string; done: boolean }[];
 }
 
 export interface HintItem {

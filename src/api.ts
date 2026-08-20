@@ -73,6 +73,11 @@ export const api = {
     req('/api/state', 'POST', { action: 'world_event_seen', eventId: id }) as Promise<ViewState>,
   // v2.0.3 P1: 玩家主动点击"我卡住了",无视冷却直接给一条提示
   help: () => req('/api/help', 'POST', {}) as Promise<{ help: { id: string; kind: 'hidden' | 'quest' | 'npc'; text: string; area: { id: string; name: string } } | null }>,
+  // v2.0.3 P2: 解谜接口
+  solvePuzzle: (puzzleId: string, answer: any) =>
+    req('/api/puzzle', 'POST', { puzzleId, answer }) as Promise<
+      { ok: boolean; reason?: string; code?: string; hint?: string; changes?: any; view?: ViewState }
+    >,
 };
 
 // ===== Admin =====

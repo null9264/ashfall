@@ -12,6 +12,14 @@ export const ITEMS: Record<string, ItemDef> = {
   photo: { id: 'photo', name: '一张被烧焦的照片', desc: '背面写着一行字：「他们不想让你看见这个。」' },
   echo_core: { id: 'echo_core', name: '回声核心', desc: '一段拒绝被删除的记忆。' },
   fuel: { id: 'fuel', name: '柴油', desc: '船夫要的渡河费。' },
+  // v2.0.3 P2: 跨周目礼物 — 通关后下周口袋里多一份旧笔记,作为"档案管理员"的礼物
+  note_archive: {
+    id: 'note_archive',
+    name: '档案管理员的旧笔记',
+    desc: '一份泛黄的笔记：「你走过这条河了。下次别只看到河流,也看看岸边。」',
+  },
+  // v2.0.3 P2: 解谜材料(可选物品)
+  key_lockbox: { id: 'key_lockbox', name: '小铁盒钥匙', desc: '柜子密码锁的备用钥匙,老吴留下的。' },
 };
 
 export const AREAS: Record<string, AreaDef> = {

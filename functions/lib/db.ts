@@ -21,17 +21,22 @@ export async function ensurePlayer(DB: D1Database, id: string): Promise<PlayerSt
     day: 1,
     danger_since: undefined,
     milestones_shown: [],
+    // v2.0.3 P2: 多周目
+    loop: 1,
+    endings_seen: [],
+    loop_carried_items: [],
   };
   // 尝试 v2.0.3 完整 INSERT,失败回退老 schema
   try {
     await DB.prepare(
-      `INSERT INTO player_states (player_id, area, attrs, inventory, quests, npc, flags, picked, ending, finished_at, updated_at, tutorial_seen, tips_seen, day, danger_since, milestones_shown)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      `INSERT INTO player_states (player_id, area, attrs, inventory, quests, npc, flags, picked, ending, finished_at, updated_at, tutorial_seen, tips_seen, day, danger_since, milestones_shown, loop, endings_seen, loop_carried_items)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(
       id, init.area, JSON.stringify(init.attrs), JSON.stringify(init.inventory), JSON.stringify(init.quests),
       JSON.stringify(init.npc), JSON.stringify(init.flags), JSON.stringify(init.picked),
       init.ending, init.finished_at, init.updated_at,
       0, '[]', 1, null, '[]',
+      init.loop, '[]', '[]',
     ).run();
   } catch (e) {
     console.error('[db] ensurePlayer v2.0.3 fallback', e);
@@ -56,11 +61,12 @@ export async function getState(DB: D1Database, id: string): Promise<PlayerState>
 
 export async function saveState(DB: D1Database, s: PlayerState): Promise<void> {
   s.updated_at = now();
-  // v2.0.3: 新字段也写入(列必须先由 0006 迁移加上;老 schema 下 update 会失败,被 catch 兜底)
+  // v2.0.3: 新字段也写入(列必须先由 0006/0007 迁移加上;老 schema 下 update 会失败,被 catch 兜底)
   try {
     await DB.prepare(
       `UPDATE player_states SET area=?, attrs=?, inventory=?, quests=?, npc=?, flags=?, picked=?, ending=?, finished_at=?, updated_at=?,
-         tutorial_seen=?, tips_seen=?, day=?, danger_since=?, milestones_shown=?
+         tutorial_seen=?, tips_seen=?, day=?, danger_since=?, milestones_shown=?,
+         loop=?, endings_seen=?, loop_carried_items=?
        WHERE player_id=?`
     ).bind(
       s.area, JSON.stringify(s.attrs), JSON.stringify(s.inventory), JSON.stringify(s.quests),
@@ -71,6 +77,9 @@ export async function saveState(DB: D1Database, s: PlayerState): Promise<void> {
       typeof s.day === 'number' ? s.day : 1,
       s.danger_since ?? null,
       JSON.stringify(Array.isArray(s.milestones_shown) ? s.milestones_shown : []),
+      typeof s.loop === 'number' ? s.loop : 1,
+      JSON.stringify(Array.isArray(s.endings_seen) ? s.endings_seen : []),
+      JSON.stringify(Array.isArray(s.loop_carried_items) ? s.loop_carried_items : []),
       s.player_id,
     ).run();
   } catch (e) {
@@ -109,5 +118,9 @@ function rowToState(r: any): PlayerState {
     ...(r.day !== undefined ? { day: typeof r.day === 'number' ? r.day : 1 } : {}),
     ...(r.danger_since !== undefined && r.danger_since !== null ? { danger_since: r.danger_since } : {}),
     ...(r.milestones_shown !== undefined ? { milestones_shown: parse(r.milestones_shown, [] as string[]) } : {}),
+    // v2.0.3 P2: 多周目字段 — 同上做列存在性 guard
+    ...(r.loop !== undefined ? { loop: typeof r.loop === 'number' ? r.loop : 1 } : {}),
+    ...(r.endings_seen !== undefined ? { endings_seen: parse(r.endings_seen, [] as string[]) } : {}),
+    ...(r.loop_carried_items !== undefined ? { loop_carried_items: parse(r.loop_carried_items, [] as string[]) } : {}),
   };
 }

@@ -11,6 +11,7 @@ import { EndingPreviewModal } from './components/EndingPreviewModal';
 import { MilestoneModal } from './components/MilestoneModal';
 import { WorldEventModal } from './components/WorldEventModal';
 import { EndingChoiceModal } from './components/EndingChoiceModal';
+import { PuzzlePanel } from './components/PuzzlePanel';
 
 type ToastCls = '' | 'good' | 'bad' | 'warn' | 'secret';
 
@@ -51,6 +52,8 @@ export default function App() {
   // v2.0.3 P1: "我卡住了" 主动求助 — 服务端返回一条无视冷却的提示
   const [help, setHelp] = useState<{ id: string; kind: 'hidden' | 'quest' | 'npc'; text: string; area: { id: string; name: string } } | null>(null);
   const [helpBusy, setHelpBusy] = useState(false);
+  // v2.0.3 P2: 解谜面板
+  const [showPuzzle, setShowPuzzle] = useState(false);
   // 比较上次与本次 inventory,得到"本次拾取的新物品 id"
   const lastInventoryRef = useRef<string[]>([]);
   // 已经在这次 session 看过的 world_event id,避免 refresh 后重弹
@@ -494,10 +497,13 @@ export default function App() {
         <button className="footer-link" onClick={openCluesPanel}>
           🔖 线索日志
         </button>
+        <button className="footer-link" onClick={() => setShowPuzzle(true)}>
+          🧩 解谜
+        </button>
         <button className="footer-link" onClick={() => setShowFeedback(true)}>
           📬 反馈意见
         </button>
-        <span className="footer-text">灰烬城 · 由乱涂机器人工坊建造 · v2.0</span>
+        <span className="footer-text">灰烬城 · v2.0.3 · {view.loop && view.loop > 1 ? <b>第 {view.loop} 周目</b> : '第一周目'}</span>
       </footer>
 
       {showFeedback && (
@@ -629,6 +635,16 @@ export default function App() {
             });
           }}
           onClose={() => setEndingPick(null)}
+        />
+      )}
+
+      {/* v2.0.3 P2: 解谜面板 */}
+      {showPuzzle && view.puzzles && (
+        <PuzzlePanel
+          puzzles={view.puzzles}
+          onClose={() => setShowPuzzle(false)}
+          onSolved={() => { refresh(); }}
+          busy={busy}
         />
       )}
 

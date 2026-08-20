@@ -234,3 +234,57 @@ export function evaluateEndings(s: PlayerState): { available: EndingDef[]; locke
   }
   return { available, locked };
 }
+
+// v2.0.3 P2: 三个简单解谜 — 全部以纯函数校验,前端只提交答案
+// 答案在服务端硬编码,前端 puzzles 组件只显示提示
+//   p_lockbox   — 监工柜子 4 位数字锁(0307) → 解锁后给 key_bunker
+//   p_sequence  — 三色序列按钮 → 解锁后给 reputation+2
+//   p_wordcode  — 哑女照片背后 4 字密码("他们不想让你看见") → 给 truth_photo flag
+export type PuzzleId = 'p_lockbox' | 'p_sequence' | 'p_wordcode';
+
+export interface PuzzleCheckResult {
+  ok: boolean;
+  reason?: string;
+  // 解开后给的效果(由调用方 apply)
+  effects?: Effect[];
+}
+
+export function checkPuzzle(puzzleId: PuzzleId, answer: any): PuzzleCheckResult {
+  switch (puzzleId) {
+    case 'p_lockbox': {
+      const s = String(answer ?? '').trim();
+      if (!/^\d{4}$/.test(s)) return { ok: false, reason: '请输入 4 位数字' };
+      if (s !== '0307') return { ok: false, reason: '密码错误' };
+      return {
+        ok: true,
+        effects: [
+          { flag: 'unlock_lockbox' },
+          { item: 'key_bunker', itemQty: 1 },
+        ],
+      };
+    }
+    case 'p_sequence': {
+      const seq = Array.isArray(answer) ? answer : [];
+      const expected = ['red', 'blue', 'green'];
+      if (seq.length !== expected.length) return { ok: false, reason: '长度不对' };
+      for (let i = 0; i < expected.length; i++) {
+        if (String(seq[i]).toLowerCase() !== expected[i]) return { ok: false, reason: '顺序不对' };
+      }
+      return {
+        ok: true,
+        effects: [
+          { flag: 'seq_done' },
+          { attr: { reputation: 2, scrap: 1 } },
+        ],
+      };
+    }
+    case 'p_wordcode': {
+      const w = String(answer ?? '').trim();
+      // 接受 '不想让你看见' 或 '他们不想让你看见' 两类写法
+      if (w === '不想让你看见') return { ok: true, effects: [{ flag: 'truth_photo' }, { attr: { reputation: 3 } }] };
+      return { ok: false, reason: '口令不对,再想想' };
+    }
+    default:
+      return { ok: false, reason: '未知谜题' };
+  }
+}

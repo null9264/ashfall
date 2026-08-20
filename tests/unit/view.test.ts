@@ -229,3 +229,43 @@ describe('viewState', () => {
     expect(v.worldEvent).toBeNull();
   });
 });
+
+// v2.0.3 P2: 多周目 + 解谜面板
+describe('view v2.0.3 P2', () => {
+  it('view 默认 loop=1', () => {
+    const s = makeState();
+    const v = viewState(s, 'x');
+    expect(v.loop).toBe(1);
+    expect(v.endings_seen).toEqual([]);
+  });
+
+  it('view 返回 puzzles 列表(三项)', () => {
+    const s = makeState();
+    const v = viewState(s, 'x');
+    expect(v.puzzles).toBeDefined();
+    expect(v.puzzles!.length).toBe(3);
+    expect(v.puzzles!.map((p) => p.id).sort()).toEqual(['p_lockbox', 'p_sequence', 'p_wordcode']);
+  });
+
+  it('解过的 puzzle 在 puzzles 列表里 done=true', () => {
+    const s = makeState();
+    s.flags['puzzle_p_lockbox'] = true;
+    const v = viewState(s, 'x');
+    const pl = v.puzzles!.find((p) => p.id === 'p_lockbox');
+    expect(pl).toBeDefined();
+    expect(pl!.done).toBe(true);
+  });
+
+  it('endings_seen 透传给 view', () => {
+    const s = makeState();
+    s.endings_seen = ['e_rebuild', 'e_truth'];
+    const v = viewState(s, 'x');
+    expect(v.endings_seen).toEqual(['e_rebuild', 'e_truth']);
+  });
+
+  it('loop=2 时也照样展示 view(无需特殊分支)', () => {
+    const s = makeState({ loop: 2 } as any);
+    const v = viewState(s, 'x');
+    expect(v.loop).toBe(2);
+  });
+});

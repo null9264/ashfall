@@ -1472,6 +1472,71 @@ button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
 .help-modal .speaker {
   color: #ffaa55;
 }
+
+/* v2.0.3 P2: 解谜面板 */
+.puzzle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.puzzle-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 170, 85, 0.25);
+  border-radius: 6px;
+  color: #f0e6d2;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.puzzle-row:hover:not(:disabled) {
+  background: rgba(255, 170, 85, 0.12);
+  border-color: #ffaa55;
+}
+.puzzle-row.done {
+  opacity: 0.55;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+.puzzle-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffaa55;
+  margin-bottom: 4px;
+}
+.puzzle-hint {
+  font-size: 12px;
+}
+.seq-buttons {
+  gap: 10px;
+  margin: 12px 0;
+}
+.seq-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-weight: bold;
+  color: #fff;
+  font-size: 16px;
+  border: 2px solid;
+  cursor: pointer;
+}
+.seq-btn.c-red   { background: #c43c3c; border-color: #e25555; }
+.seq-btn.c-blue  { background: #2c5fa3; border-color: #4a7dc7; }
+.seq-btn.c-green { background: #3c8c4a; border-color: #5aae6a; }
+.seq-btn.ghost {
+  width: auto;
+  height: auto;
+  padding: 6px 14px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border-color: #555;
+}
 @keyframes transitSlide {
   0%   { letter-spacing: 0px; opacity: 0; }
   20%  { letter-spacing: 6px; opacity: 1; }

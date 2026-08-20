@@ -135,4 +135,8 @@ export interface PlayerState {
   danger_since?: number;
   // v2.0.3: 已解锁的支线里程碑
   milestones_shown?: string[];
+  // v2.0.3 P2: 多周目
+  loop?: number;                 // 当前周目(从 1 开始)
+  endings_seen?: string[];       // 历史通关的结局 id(决定下周的解锁/奖励)
+  loop_carried_items?: string[]; // 跨周目保留的物品(默认空)
 }
