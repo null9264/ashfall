@@ -1,9 +1,14 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, getSavedNickname, setSavedNickname } from './api';
-import type { ViewState, DialogView, HistoryEntry, ClueEntry } from './types';
+import type { ViewState, DialogView, HistoryEntry, ClueEntry, ItemDef } from './types';
 import { StatsPanel } from './panels/StatsPanel';
 import { CluesPanel } from './panels/CluesPanel';
 import { HistoryDrawer } from './components/HistoryDrawer';
+import { TutorialOverlay } from './components/TutorialOverlay';
+import { MainProgress } from './components/MainProgress';
+import { ItemTipModal } from './components/ItemTipModal';
+import { EndingPreviewModal } from './components/EndingPreviewModal';
+import { MilestoneModal } from './components/MilestoneModal';
 
 type ToastCls = '' | 'good' | 'bad' | 'warn' | 'secret';
 
@@ -31,6 +36,13 @@ export default function App() {
   // 用 ref 标记是否已经做过首次 state 拉取,避免 React StrictMode 双调用触发副作用
   const inited = useRef(false);
   const lastToastKey = useRef('');
+  // v2.0.3: 物品定义(用于首拾 tip 弹窗)、教程浮层首拾提示 tip、主线里程碑 modal
+  const [itemDefs, setItemDefs] = useState<ItemDef[]>([]);
+  const [tipItem, setTipItem] = useState<string | null>(null);
+  const [milestone, setMilestone] = useState<{ title: string; body: string; step: number; total: number } | null>(null);
+  const [showEndingPreview, setShowEndingPreview] = useState(false);
+  // 比较上次与本次 inventory,得到"本次拾取的新物品 id"
+  const lastInventoryRef = useRef<string[]>([]);
 
   // 简单取数（不弹 toast 也不刷状态外的副作用）
   const fetchHistory = useCallback(async (limit = 20) => {
@@ -56,6 +68,16 @@ export default function App() {
     } else {
       setSavedNickname(v.nickname);
     }
+    // v2.0.3: 检测本次是否拾了新物品(基于上次 inventory diff)
+    const newIds = v.inventory.map((i) => i.id);
+    const before = new Set(lastInventoryRef.current);
+    const added = newIds.filter((id) => !before.has(id));
+    if (added.length > 0) {
+      // 只展示第一个未登记 tip 的物品,避免刷屏
+      const candidate = added.find((id) => !(v as any).tips_seen?.includes?.(id)) || added[0];
+      setTipItem(candidate);
+    }
+    lastInventoryRef.current = newIds;
     setView(v);
     // 静默刷新历史（顶部抽屉用），但只有在抽屉打开过/全屏面板打开时才拉
     if (histOpen || showStatsPanel) fetchHistory(20);
@@ -65,7 +87,33 @@ export default function App() {
     inited.current = true;
     refresh();
     fetchHistory(20);
+    // v2.0.3: 一次性拉物品定义列表(公共 endpoint)用于首拾 tip
+    api.items()
+      .then((r) => setItemDefs(r.items || []))
+      .catch((e) => console.error('[items]', e));
   }, [refresh, fetchHistory]);
+
+  // v2.0.3: 监听 view.mainProgress 变化,弹主线里程碑过场
+  const lastMilestoneShown = useRef(0);
+  useEffect(() => {
+    if (!view) return;
+    const cur = view.mainProgress ?? 0;
+    // 只在 mainProgress 增加时弹,避免初始化弹一份
+    if (cur > lastMilestoneShown.current && cur >= 1 && cur <= 5) {
+      // 找刚刚完成的那条主线任务,取其 milestone 文本
+      const doneStepQuest = view.quests.find((q) => q.status === 'done' && q.mainStep === cur);
+      if (doneStepQuest) {
+        setMilestone({
+          title: doneStepQuest.name,
+          body: doneStepQuest.milestone || doneStepQuest.summary,
+          step: cur,
+          total: 5,
+        });
+      }
+      lastMilestoneShown.current = cur;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view?.mainProgress]);
 
   // 静默暗线提示气泡
   useEffect(() => {
@@ -194,7 +242,7 @@ export default function App() {
     <div className={'app' + (histOpen ? ' hist-open' : '')}>
       <header className="topbar">
         <div className="brand">灰烬城 <span>· ASHFALL</span></div>
-        <div className="who">{view.nickname && <span className="nick">@{view.nickname}</span>}</div>
+        <div className="who">{view.nickname && <span className="nick">@{view.nickname}</span>}{typeof view.day === 'number' && <span className="day">第 {view.day} 天</span>}</div>
         <div className="topbar-right">
           <div className="stats">
             <Stat label="生命" v={a.hp} max={100} cls="hp" />
@@ -203,6 +251,7 @@ export default function App() {
             <Stat label="声望" v={a.reputation} max={50} cls="rep" />
             <Stat label="废料" v={a.scrap} max={20} cls="scr" />
           </div>
+          <MainProgress progress={view.mainProgress ?? 0} />
           <button
             className={'hist-toggle' + (histOpen ? ' on' : '')}
             onClick={toggleHistDrawer}
@@ -276,35 +325,39 @@ export default function App() {
         <section className="panel side">
           <h2>任务日志</h2>
           {view.quests.length === 0 && <p className="muted small">还没有任务。</p>}
-          {view.quests.map((q) => (
-            <div key={q.id} className={'quest q-' + q.status}>
-              <div className="q-head">
-                <b>{q.name}</b>
-                <span className={'tag t-' + q.status}>
-                  {q.status === 'done' ? '✓ 已完成' : q.status === 'active' ? '● 进行中' : '○ 可接取'}
-                </span>
-              </div>
-              <p className="small muted">{q.summary}</p>
-              {q.status === 'open' && (
-                <button className="mini primary" disabled={busy} onClick={() => act(() => api.acceptQuest(q.id))}>
-                  ▶ 接取
-                </button>
-              )}
-              {q.status === 'active' && (
-                <div className="row wrap q-methods">
-                  {q.methods.map((m) => (
-                    <button key={m.id} className="mini primary" disabled={busy} onClick={() => act(async () => {
-                      try { return await api.completeQuest(q.id, m.id); }
-                      catch (e: any) { toastMsg(e?.message); throw e; }
-                    })}>{m.label}</button>
-                  ))}
+          {view.quests.map((q) => {
+            const cat = q.category || 'side';
+            return (
+              <div key={q.id} className={'quest q-' + q.status + ' q-' + cat}>
+                <div className="q-head">
+                  <b>{q.name}</b>
+                  <span className={'tag t-' + q.status} data-cat={cat}>
+                    {q.status === 'done' ? '✓ 已完成' : q.status === 'active' ? '● 进行中' : '○ 可接取'}
+                    {q.category === 'main' && q.status !== 'done' && q.mainStep ? ` · 步骤${q.mainStep}/5` : ''}
+                  </span>
                 </div>
-              )}
-              {q.status === 'done' && (
-                <div className="q-done-hint small muted">已了结</div>
-              )}
-            </div>
-          ))}
+                <p className="small muted">{q.summary}</p>
+                {q.status === 'open' && (
+                  <button className="mini primary" disabled={busy} onClick={() => act(() => api.acceptQuest(q.id))}>
+                    ▶ 接取
+                  </button>
+                )}
+                {q.status === 'active' && (
+                  <div className="row wrap q-methods">
+                    {q.methods.map((m) => (
+                      <button key={m.id} className="mini primary" disabled={busy} onClick={() => act(async () => {
+                        try { return await api.completeQuest(q.id, m.id); }
+                        catch (e: any) { toastMsg(e?.message); throw e; }
+                      })}>{m.label}</button>
+                    ))}
+                  </div>
+                )}
+                {q.status === 'done' && (
+                  <div className="q-done-hint small muted">已了结</div>
+                )}
+              </div>
+            );
+          })}
 
           <h2>背包</h2>
           {view.inventory.length === 0 && <p className="muted small">空空如也。</p>}
@@ -327,7 +380,21 @@ export default function App() {
             })}>走向 · {e.title}</button>
           ))}
           {view.endings.available.length === 0 && view.endings.locked.length > 0 && (
-            <p className="muted small">已锁定的结局：{view.endings.locked.map((l) => l.title).join('、')}（继续探索以解锁）</p>
+            <div className="locked-endings-wrap">
+              <p className="muted small">已锁定的结局（点查看方向提示）：</p>
+              <div className="row wrap">
+                {view.endings.locked.map((l) => (
+                  <button
+                    key={l.id}
+                    className="end-btn locked"
+                    onClick={() => setShowEndingPreview(true)}
+                    title={l.hint}
+                  >
+                    🔒 {l.title}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </section>
       </main>
@@ -393,6 +460,48 @@ export default function App() {
           <div className="hint-bubble-title">暗线 · {view.hint.area.name}</div>
           <div className="hint-bubble-text">{view.hint.text}</div>
         </div>
+      )}
+
+      {/* v2.0.3: 教程浮层(仅 firstTime 时显示) */}
+      {view.firstTime && !milestone && !tipItem && !showEndingPreview && (
+        <TutorialOverlay
+          onClose={() => {
+            api.dismissTutorial().catch(() => null);
+            setView((v) => v ? { ...v, firstTime: false } : v);
+          }}
+        />
+      )}
+
+      {/* v2.0.3: 首次拾取物品 — 显示 tip */}
+      {tipItem && (
+        <ItemTipModal
+          itemId={tipItem}
+          itemDefs={itemDefs}
+          onClose={() => {
+            const id = tipItem;
+            setTipItem(null);
+            api.markItemTipSeen(id).catch(() => null);
+          }}
+        />
+      )}
+
+      {/* v2.0.3: 主线里程碑过场 */}
+      {milestone && (
+        <MilestoneModal
+          title={milestone.title}
+          body={milestone.body}
+          step={milestone.step}
+          total={milestone.total}
+          onClose={() => setMilestone(null)}
+        />
+      )}
+
+      {/* v2.0.3: 锁定结局的方向提示 */}
+      {showEndingPreview && (
+        <EndingPreviewModal
+          endings={view.endings.locked}
+          onClose={() => setShowEndingPreview(false)}
+        />
       )}
 
       {toast && <div className={'toast ' + toastCls}>{toast}</div>}

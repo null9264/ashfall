@@ -1,5 +1,6 @@
 // GET /api/state：返回当前玩家 state（附带昵称 + 暗线提示）
-import { getState } from '../lib/db';
+// POST /api/state: 一些无副作用的客户端 ack（教程已读 / 物资 tip 已读等）
+import { getState, saveState } from '../lib/db';
 import { viewState } from '../lib/view';
 import { json } from '../lib/util';
 import { logEvent } from '../lib/events';
@@ -23,4 +24,35 @@ export async function onRequestGet(context: any) {
     });
   }
   return json({ ...viewState(s, nick), hint: hint ?? null });
+}
+
+export async function onRequestPost(context: any) {
+  const s = await getState(context.env.DB, context.data.playerId);
+  const nick = await getNickname(context.env.DB, context.data.playerId);
+  let body: any = {};
+  try { body = await context.request.json(); } catch { body = {}; }
+  const action = body.action;
+  let changed = false;
+
+  if (action === 'dismiss_tutorial') {
+    if (!s.tutorial_seen) {
+      s.tutorial_seen = true;
+      changed = true;
+      logEvent(context.env.DB, context.data.playerId, 'tutorial_dismiss', '', { when: Date.now() });
+    }
+  } else if (action === 'item_tip_seen') {
+    const itemId = String(body.itemId || '').trim();
+    if (itemId) {
+      const list = Array.isArray(s.tips_seen) ? s.tips_seen.slice() : [];
+      if (!list.includes(itemId)) {
+        list.push(itemId);
+        // 最多保留 200 条,避免无限增长
+        s.tips_seen = list.slice(-200);
+        changed = true;
+      }
+    }
+  }
+  if (changed) await saveState(context.env.DB, s);
+  // 不论是否真的改了，都返回最新 view 给前端当 ack
+  return json(viewState(s, nick));
 }

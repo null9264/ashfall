@@ -4,7 +4,7 @@ import type { D1Database } from '@cloudflare/workers-types';
 export type EventType =
   | 'move' | 'talk' | 'pickup' | 'quest_accept' | 'quest_complete'
   | 'hidden' | 'ending' | 'reset' | 'nickname' | 'login' | 'feedback'
-  | 'hint';
+  | 'hint' | 'tutorial_dismiss';
 
 export async function logEvent(
   DB: D1Database,

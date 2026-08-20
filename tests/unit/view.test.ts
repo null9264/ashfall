@@ -131,4 +131,50 @@ describe('viewState', () => {
       expect(q.methods.length).toBeGreaterThan(0);
     }
   });
+
+  // v2.0.3: 主线进度(0..5) / firstTime / 锁定结局 hint / quest category
+  it('mainProgress 默认 0,完成任一主线变成 1', () => {
+    const s = makeState();
+    const v0 = viewState(s, 'x');
+    expect(v0.mainProgress).toBe(0);
+    const mainStep1 = QUESTS.find((q) => q.mainStep === 1);
+    expect(mainStep1).toBeTruthy();
+    s.quests[mainStep1!.id] = { status: 'done', method: mainStep1!.methods[0].id };
+    const v1 = viewState(s, 'x');
+    expect(v1.mainProgress).toBe(1);
+  });
+
+  it('firstTime 默认 true; 标记 tutorial_seen 后变 false', () => {
+    const s = makeState();
+    expect(viewState(s, 'x').firstTime).toBe(true);
+    s.tutorial_seen = true;
+    expect(viewState(s, 'x').firstTime).toBe(false);
+  });
+
+  it('锁定结局都带 hint 中文文本', () => {
+    const s = makeState();
+    const v = viewState(s, 'x');
+    expect(v.endings.locked.length).toBeGreaterThan(0);
+    for (const e of v.endings.locked) {
+      expect(e.hint).toBeTruthy();
+      // 模糊"条件未达成"默认串不应该出现 — 我们每个 ENDINGS 都给了定制 hint
+      expect(e.hint).not.toBe('条件未达成');
+    }
+  });
+
+  it('主线任务都带 category=main 与 mainStep', () => {
+    const mains = QUESTS.filter((q) => q.category === 'main');
+    expect(mains.length).toBeGreaterThanOrEqual(5);
+    const steps = mains.map((q) => q.mainStep).sort();
+    expect(JSON.stringify(steps)).toBe(JSON.stringify([1, 2, 3, 4, 5]));
+  });
+
+  it('NPC trust 字段默认 0,设置后回显 0..5', () => {
+    const s = makeState();
+    const v = viewState(s, 'x');
+    for (const n of v.npcs) {
+      expect(n.trust).toBeGreaterThanOrEqual(0);
+      expect(n.trust).toBeLessThanOrEqual(5);
+    }
+  });
 });

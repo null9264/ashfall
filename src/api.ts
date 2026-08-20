@@ -1,4 +1,4 @@
-import type { ViewState, DialogView, HistoryEntry, ClueEntry } from './types';
+import type { ViewState, DialogView, HistoryEntry, ClueEntry, ItemDef } from './types';
 
 const NICK_STORAGE_KEY = 'ashfall_nickname';
 
@@ -60,6 +60,12 @@ export const api = {
   // v2.0.2: 数值历史 & 线索日志
   history: (limit = 100) => req('/api/player/history?limit=' + limit) as Promise<{ entries: HistoryEntry[] }>,
   clues: () => req('/api/player/clues') as Promise<{ clues: ClueEntry[] }>,
+  // v2.0.3: 物品定义(用于首拾 tip 模态渲染) + 教程已读 ack
+  items: () => req('/api/items') as Promise<{ items: ItemDef[] }>,
+  dismissTutorial: () => req('/api/state', 'POST', { action: 'dismiss_tutorial' }) as Promise<ViewState>,
+  // v2.0.3: 玩家手动标记录制某条 tip 已读(可选;服务端默认基于 items 集合自动 dedupe)
+  markItemTipSeen: (itemId: string) =>
+    req('/api/state', 'POST', { action: 'item_tip_seen', itemId }) as Promise<ViewState>,
 };
 
 // ===== Admin =====

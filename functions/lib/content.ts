@@ -352,6 +352,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_daughter', name: '找回家的小月', area: 'gate', giver: 'yun',
     summary: '阿芸的女儿小月去地铁找药后失踪。',
+    category: 'main', mainStep: 1,
+    milestone: '小月回家了。你把活生生的人从灰里接了回来。',
     methods: [
       { id: 'm_find', label: '在地铁深处找到她，平安带回', path: 'kind',
         completeRequires: { flag: 'met_singer', area: 'metro' },
@@ -367,6 +369,7 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_supply', name: '老周的存货', area: 'gate', giver: 'zhou',
     summary: '老周要 3 块废金属。',
+    category: 'side',
     methods: [
       { id: 'm_give', label: '给他 3 块废金属', path: 'neutral',
         completeRequires: { item: 'scrap_metal', itemQty: 3 },
@@ -376,6 +379,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_cure', name: '医生的药', area: 'market', giver: 'doctor',
     summary: '医生要 2 盒抗生素。',
+    category: 'main', mainStep: 2,
+    milestone: '医生收下了抗生素。"孩子们会记住你的,我也会。"',
     methods: [
       { id: 'm_give', label: '给他 2 盒抗生素', path: 'kind',
         completeRequires: { item: 'meds', itemQty: 2 },
@@ -385,6 +390,7 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_orphan', name: '小满的小熊', area: 'market', giver: 'manman',
     summary: '小满的小熊掉在了工厂那边。',
+    category: 'side',
     methods: [
       { id: 'm_get', label: '去工厂找回小熊（给她 1 口粮）', path: 'kind',
         completeRequires: { flag: 'clue_bear', area: 'factory', item: 'ration' },
@@ -394,6 +400,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_husband', name: '林婶的丈夫', area: 'tenements', giver: 'linshen',
     summary: '老吴在工厂"被优化"后失踪。',
+    category: 'main', mainStep: 3,
+    milestone: '老吴从密室里走出来,擦了擦眼睛:"我以为没人来了。"',
     methods: [
       { id: 'm_rescue', label: '在居民楼密室找到藏起来的老吴', path: 'kind',
         completeRequires: { flag: 'wu_found' },
@@ -406,6 +414,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_code', name: '墙上的密码', area: 'tenements', giver: 'teen',
     summary: '少年缺一段工厂记录来破译地下城的密码。',
+    category: 'main', mainStep: 4,
+    milestone: '密码破译了。少年递给你一张地图碎片——"去找吧,找到就别回头。"',
     methods: [
       { id: 'm_break', label: '带回工厂记录，破译密码', path: 'truth',
         completeRequires: { flag: 'found_record' },
@@ -415,6 +425,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'q_factory', name: '工厂的抉择', area: 'factory', giver: 'foreman',
     summary: '监工给你三条路：合作、揭发、或镇压。',
+    category: 'main', mainStep: 5,
+    milestone: '你做出了选择。剩下的交给时间。',
     methods: [
       { id: 'm_expose', label: '把真相证据公之于众', path: 'truth',
         completeRequires: { flag: 'truth_evidence' },
@@ -461,7 +473,9 @@ export const ENDINGS: EndingDef[] = [
       '灰没散，但风里有了人味。',
       '—— 你选了把人一个个接回来。',
     ],
-    requires: [{ attrs: { reputation: 20 } }, { flag: 'camp_found' }, { flag: 'exposed' }] },
+    requires: [{ attrs: { reputation: 20 } }, { flag: 'camp_found' }, { flag: 'exposed' }],
+    hint: '需要：声望足够高，找到密室，并公开真相。',
+  },
   { id: 'e_hermit', title: '结局 · 独善', tone: '平静',
     passages: [
       '你办完了阿芸托付的事，没多问，也没多管。',
@@ -469,7 +483,9 @@ export const ENDINGS: EndingDef[] = [
       '城门照常开关，灰照常落下。你活下来了，这年头，活下来就算赢。',
       '—— 你选了不让自己陷进去。',
     ],
-    requires: [{ flag: 'found_yue' }, { flag: 'met_foreman' }, { attrs: { reputation: -5 } }] },
+    requires: [{ flag: 'found_yue' }, { flag: 'met_foreman' }, { attrs: { reputation: -5 } }],
+    hint: '需要：把小月带回来、见过监工、声望不太高。',
+  },
   { id: 'e_conspirator', title: '结局 · 揭穿', tone: '凛冽',
     passages: [
       '你把工厂的记录、哑女的照片、墙上的密码，拼成一份没人能抵赖的东西。',
@@ -477,7 +493,9 @@ export const ENDINGS: EndingDef[] = [
       '名字一个个被想起。监工消失了。可你清楚，系统还在别处运转。',
       '—— 你选了让真相见光，哪怕只是裂一道缝。',
     ],
-    requires: [{ flag: 'exposed' }, { flag: 'has_truth' }] },
+    requires: [{ flag: 'exposed' }, { flag: 'has_truth' }],
+    hint: '需要：公开真相，并收集到全部真相碎片。',
+  },
   { id: 'e_warlord', title: '结局 · 暴君', tone: '荒芜',
     passages: [
       '你压下所有知道内情的人，独吞了工厂的秘密和里面的金属。',
@@ -485,7 +503,9 @@ export const ENDINGS: EndingDef[] = [
       '阿芸还在等女儿。你没再见过她。',
       '—— 你选了在废墟上，做唯一的王。',
     ],
-    requires: [{ flag: 'crushed' }, { attrs: { reputation: -10 } }] },
+    requires: [{ flag: 'crushed' }, { attrs: { reputation: -10 } }],
+    hint: '需要：暴力镇压知情者，并保持足够冷血。',
+  },
   { id: 'e_echo', title: '结局 · 回声', tone: '永恒',
     passages: [
       '你带着回声核心回到地面。墙里的嗡鸣，第一次有了形状。',
@@ -494,5 +514,8 @@ export const ENDINGS: EndingDef[] = [
       '小月、老吴、哑女、所有"被优化"的人，在别人的嘴里，重新活了一遍。',
       '—— 隐藏结局 · 你让城市，记得自己做过什么。',
     ],
-    requires: [{ flag: 'took_echo' }, { flag: 'found_bunker' }, { flag: 'got_map' }, { flag: 'has_truth' }, { flag: 'clue_undermap' }] },
+    requires: [{ flag: 'took_echo' }, { flag: 'found_bunker' }, { flag: 'got_map' }, { flag: 'has_truth' }, { flag: 'clue_undermap' }],
+    hint: '需要：拿到回声核心、打开密室、拿到地图、真相齐全。',
+  },
 ];
+

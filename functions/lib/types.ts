@@ -44,6 +44,12 @@ export interface QuestDef {
   area: AreaId;             // 发布区域
   giver?: string;           // 发布 NPC
   summary: string;
+  // v2.0.3: 主线 / 支线 / 隐藏 — 用于新手引导与面板分级
+  category?: 'main' | 'side' | 'secret';
+  // v2.0.3: 主线里程碑步骤(1..5)，用于主进度条
+  mainStep?: number;
+  // v2.0.3: 完成时显示的纪念碑文本(主线才有)
+  milestone?: string;
   // 可接受的多种解法（多分支）
   methods: QuestMethod[];
   // 接取前置
@@ -92,6 +98,8 @@ export interface EndingDef {
   passages: string[];
   // 达成条件（服务端判定）
   requires: Req[];
+  // v2.0.3: 给玩家的进度提示(不暴露具体 flag 名)
+  hint?: string;
 }
 
 // 玩家状态（全部存 D1）
@@ -108,4 +116,14 @@ export interface PlayerState {
   ending: string | null;
   finished_at: number | null;
   updated_at: number;
+  // v2.0.3: 已消耗的提示（用于'不再显示教程浮层'）
+  tutorial_seen?: boolean;
+  // v2.0.3: 拾过的物品集合(记录"已介绍") — id 数组
+  tips_seen?: string[];
+  // v2.0.3: 当前天数
+  day?: number;
+  // v2.0.3: 最近一次进入高危区的时间戳(用于驻留扣血)
+  danger_since?: number;
+  // v2.0.3: 已解锁的支线里程碑
+  milestones_shown?: string[];
 }

@@ -1056,3 +1056,250 @@ button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
   .topbar .stat-bar { width: 26px; }
 }
 
+/* ===== v2.0.3 引导四件套 ===== */
+.day {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 200, 100, 0.1);
+  color: #ffcc88;
+  font-size: 11px;
+  border: 1px solid rgba(255, 200, 100, 0.25);
+}
+
+/* 主进度条 */
+.main-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 10px;
+  background: rgba(40, 20, 10, 0.5);
+  border: 1px solid rgba(255, 180, 100, 0.18);
+  border-radius: 8px;
+  margin-left: 8px;
+}
+.main-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+  color: #c8a878;
+}
+.main-progress-count {
+  color: #ffaa55;
+  font-weight: bold;
+}
+.main-progress-bar {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.main-progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 9.5px;
+  color: #665040;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.main-progress-step.done { color: #ffaa55; }
+.main-progress-step.cur { color: #ffcc88; }
+.main-progress-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 180, 100, 0.18);
+  border: 1px solid rgba(255, 180, 100, 0.3);
+}
+.main-progress-step.done .main-progress-dot {
+  background: #ff9933;
+  box-shadow: 0 0 6px rgba(255, 153, 51, 0.5);
+}
+.main-progress-step.cur .main-progress-dot {
+  background: #ffcc88;
+  box-shadow: 0 0 4px rgba(255, 204, 136, 0.4);
+}
+.main-progress-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 4.5em;
+}
+
+/* 教程浮层 */
+.tutorial-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+.tutorial-card {
+  max-width: 460px;
+  width: calc(100% - 32px);
+  padding: 22px 26px 20px;
+  background: linear-gradient(135deg, #2a1a0e 0%, #1a0e08 100%);
+  border: 1px solid rgba(255, 180, 100, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65), 0 0 32px rgba(255, 140, 60, 0.15);
+  color: #e8d4b8;
+}
+.tutorial-step {
+  font-size: 11px;
+  color: #c8a878;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tutorial-title {
+  margin: 0 0 12px;
+  color: #ffaa55;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+.tutorial-body {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+.tutorial-hint {
+  font-size: 12.5px;
+  background: rgba(255, 180, 100, 0.08);
+  border-left: 3px solid rgba(255, 180, 100, 0.4);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 0 0 18px;
+  color: #d8c0a0;
+}
+.tutorial-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 物品 tip 模态 */
+.item-tip-modal { max-width: 460px; }
+.item-tip-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  margin: 8px 0;
+  color: #e8d4b8;
+}
+.item-tip-label {
+  flex: 0 0 7em;
+  color: #ffaa55;
+  font-weight: 600;
+}
+
+/* 主线里程碑过场 */
+.milestone-modal {
+  max-width: 500px;
+  border: 1px solid rgba(255, 200, 100, 0.5);
+  background: linear-gradient(160deg, #2c1810 0%, #180c06 100%);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 48px rgba(255, 180, 80, 0.25);
+}
+.milestone-step {
+  font-size: 11.5px;
+  color: #ffcc88;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.milestone-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  color: #ffaa55;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 12px rgba(255, 153, 51, 0.45);
+  animation: glow 1.2s ease-in-out infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 12px rgba(255, 153, 51, 0.4); }
+  to { text-shadow: 0 0 20px rgba(255, 153, 51, 0.7); }
+}
+
+/* 结局预览 */
+.ending-preview-modal { max-width: 520px; }
+.ending-preview-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 14px;
+}
+.ending-preview-item {
+  background: rgba(255, 180, 100, 0.06);
+  border: 1px solid rgba(255, 180, 100, 0.18);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.ending-preview-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffaa55;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lock-ic { color: #665040; }
+.ending-preview-hint {
+  font-size: 12.5px;
+  color: #d8c0a0;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* 锁定结局按钮 */
+.end-btn.locked {
+  background: rgba(40, 20, 10, 0.5);
+  border: 1px solid rgba(255, 180, 100, 0.18);
+  color: #c8a878;
+  cursor: pointer;
+}
+.end-btn.locked:hover {
+  background: rgba(255, 180, 100, 0.08);
+  color: #ffcc88;
+}
+.locked-endings-wrap {
+  margin-top: 8px;
+}
+
+/* 移动端压缩引导元素 */
+@media (max-width: 720px) {
+  .main-progress {
+    margin-left: 0;
+    width: 100%;
+  }
+  .main-progress-name { font-size: 9px; }
+  .tutorial-card { padding: 18px; }
+  .tutorial-title { font-size: 16px; }
+  .milestone-title { font-size: 19px; }
+  .ending-preview-modal { padding: 16px; }
+}
+
+/* 任务里区分主线/支线/隐藏的小角标 */
+.quest.q-open .q-head b::before,
+.quest.q-active .q-head b::before,
+.quest.q-done .q-head b::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: #665040;
+}
+.quest .q-head b:has(+ .tag[data-cat='main']) { /* placeholder */ }
+.quest.q-main .q-head b::before { background: #ffaa55; }
+.quest.q-secret .q-head b::before { background: #c47aff; }
+.quest.q-side .q-head b::before { background: #66aaff; }
+

@@ -27,15 +27,28 @@ export interface ViewState {
   unlockedAreas: string[];
   attrs: { hp: number; stamina: number; radiation: number; reputation: number; scrap: number };
   inventory: { id: string; name: string; qty: number }[];
-  quests: { id: string; name: string; status: 'open' | 'active' | 'done'; summary: string; methods: { id: string; label: string }[] }[];
-  npcs: { id: string; name: string; blurb: string }[];
+  quests: {
+    id: string; name: string; status: 'open' | 'active' | 'done';
+    summary: string;
+    category?: 'main' | 'side' | 'secret';
+    mainStep?: number;
+    milestone?: string;
+    methods: { id: string; label: string }[];
+  }[];
+  npcs: { id: string; name: string; blurb: string; trust?: number }[];
   hiddenFound: string[];
-  endings: { available: { id: string; title: string }[]; locked: { id: string; title: string }[] };
+  endings: { available: { id: string; title: string }[]; locked: { id: string; title: string; hint: string }[] };
   ending: string | null;
   endingDetail: { id: string; title: string; tone: string; passages: string[] } | null;
   changes?: AttrChanges;
   // v2.0.2: 暗线提示（只在新的一次 /api/state 拉取时附带，前端弹一个小气泡即可）
   hint?: HintItem | null;
+  // v2.0.3: 主线进度(0..5)
+  mainProgress?: number;
+  // v2.0.3: 教程浮层是否首次
+  firstTime?: boolean;
+  // v2.0.3: 当前天数
+  day?: number;
 }
 
 export interface HintItem {
@@ -50,4 +63,14 @@ export interface DialogView {
   speaker?: string;
   text: string;
   options: { label: string; index: number }[];
+}
+
+// v2.0.3: 物品定义(只描述公共字段;后端 ITEMS 是这些字段的超集)
+export interface ItemDef {
+  id: string;
+  name: string;
+  type: string;
+  desc?: string;
+  tags?: string[];
+  decay?: string;
 }
