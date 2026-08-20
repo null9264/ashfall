@@ -174,6 +174,15 @@ export function applyDialogChoice(s: PlayerState, npcId: string, nodeId: string,
   s.npc[npcId].met = true;
   if (opt.setFlag) s.flags[opt.setFlag] = true;
   if (opt.giveItem) addItem(s, opt.giveItem, 1);
+  // v2.0.3: 单步对话 trust / attr
+  if (opt.trust) {
+    const t = opt.trust;
+    s.npc[npcId]!.trust += t.delta;
+    if (t.delta > 0) s.npc[npcId]!.met = true;
+  }
+  if (opt.attr) {
+    for (const [k, v] of Object.entries(opt.attr)) clampAttr(s, k as keyof PlayerState['attrs'], v as number);
+  }
   if (opt.acceptQuest && !s.quests[opt.acceptQuest]) s.quests[opt.acceptQuest] = { status: 'active' };
   return { next: opt.goto ?? null };
 }

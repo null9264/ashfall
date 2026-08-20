@@ -3,6 +3,34 @@ import type { PlayerState } from './types';
 import { AREAS, NPCS, QUESTS, HIDDENS, ENDINGS } from './content';
 import { evaluateEndings, diffStates } from './rules';
 
+// v2.0.3: NPC 立场推断 — 根据玩家当前持有的物品/已解锁 flag 推断 NPC 的潜在阵营
+// 目的:不再让 NPC 神秘化,玩家可以根据线索推测"这个人可能帮得上忙"
+function inferStance(npcId: string, s: PlayerState): 'ally' | 'witness' | 'hostile' | 'neutral' {
+  const has = (id: string) => !!s.inventory.find((i) => i.id === id);
+  const flag = (k: string) => !!s.flags[k];
+  const npcTrust = s.npc[npcId]?.trust ?? 0;
+  switch (npcId) {
+    case 'yun':       return npcTrust >= 3 ? 'ally' : 'witness';
+    case 'zhou':      return npcTrust >= 2 ? 'ally' : 'neutral';
+    case 'scar':      return (has('photo') && flag('truth_photo')) ? 'ally' : 'hostile';
+    case 'manman':    return npcTrust >= 4 ? 'ally' : 'witness';
+    case 'doctor':    return flag('rewarded_by_doctor') ? 'ally' : 'neutral';
+    case 'singer':    return flag('met_singer') ? 'ally' : 'neutral';
+    case 'ghost':     return flag('fed_ghost') ? 'ally' : 'witness';
+    case 'linshen':   return flag('saved_wu') ? 'ally' : 'witness';
+    case 'teen':      return flag('knows_bunker') ? 'ally' : 'neutral';
+    case 'wu':        return flag('saved_wu') ? 'ally' : 'witness';
+    case 'foreman':   return flag('foreman_refused') ? 'hostile'
+                            : flag('truth_evidence') ? 'witness'
+                            : 'hostile';
+    case 'tech':      return flag('freed_tech') ? 'ally' : 'hostile';
+    case 'boatman':   return (flag('paid_boat') || flag('has_undermap')) ? 'ally' : 'neutral';
+    case 'mute':      return flag('truth_photo') ? 'ally' : 'witness';
+    case 'echo':      return has('echo_core') ? 'ally' : 'witness';
+    default:          return 'neutral';
+  }
+}
+
 export function viewState(s: PlayerState, nickname: string | null, before?: PlayerState) {
   const area = AREAS[s.area];
   const endings = evaluateEndings(s);
@@ -29,6 +57,8 @@ export function viewState(s: PlayerState, nickname: string | null, before?: Play
       id: n.id, name: n.name, blurb: n.blurb,
       // v2.0.3: trust 公开(0..5)，让玩家看得见亲善进展
       trust: Math.min(5, Math.max(0, s.npc[n.id]?.trust ?? 0)),
+      // v2.0.3: 立场 — 让玩家根据持有物品和剧情推测 NPC 是潜在帮忙者/受害者/旁观者
+      stance: inferStance(n.id, s),
     })),
     hiddenFound: HIDDENS.filter((h) => s.flags[h.id]).map((h) => h.name),
     endings: {

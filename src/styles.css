@@ -1303,3 +1303,35 @@ button.dlg-opt:disabled { opacity: 0.4; cursor: not-allowed; }
 .quest.q-secret .q-head b::before { background: #c47aff; }
 .quest.q-side .q-head b::before { background: #66aaff; }
 
+/* ===== v2.0.3 剧情:NPC 立场 + 信任度 ===== */
+.npc {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'name trust' 'blurb trust' 'stance trust';
+  align-items: center;
+  text-align: left;
+  padding: 8px 10px;
+}
+.npc-name { grid-area: name; }
+.npc-blurb { grid-area: blurb; font-size: 12px; }
+.npc-stance {
+  grid-area: stance;
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+  margin-top: 2px;
+}
+.npc-stance.stance-ally    { background: rgba(120, 220, 120, 0.18); color: #88dd88; border: 1px solid rgba(120, 220, 120, 0.3); }
+.npc-stance.stance-witness { background: rgba(220, 200, 100, 0.18); color: #ddcc88; border: 1px solid rgba(220, 200, 100, 0.3); }
+.npc-stance.stance-hostile { background: rgba(220, 100, 100, 0.18); color: #dd8888; border: 1px solid rgba(220, 100, 100, 0.3); }
+.npc-stance.stance-neutral { background: rgba(160, 160, 160, 0.12); color: #aaa; border: 1px solid rgba(160, 160, 160, 0.25); }
+.npc-trust {
+  grid-area: trust;
+  font-size: 11px;
+  letter-spacing: -1px;
+  color: #ff8844;
+  white-space: nowrap;
+}
+

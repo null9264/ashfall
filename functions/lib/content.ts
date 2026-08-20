@@ -101,8 +101,14 @@ export const NPCS: NpcDef[] = [
           { label: '（转身走开）', goto: 'bye' },
         ] },
       ok: { speaker: '疤脸', text: '识相。药我这儿有，用废金属换。工厂里多的是，胆子大就去。', options: [
-          { label: '知道了', goto: 'bye', setFlag: 'met_scar' },
-        ] },
+        { label: '知道了', goto: 'bye', setFlag: 'met_scar' },
+        // v2.0.3 剧情:带真相物品来,疤脸立场暴露 — 他也是受害者一员
+        { label: '（出示照片）我见到哑女给我的那张照片', goto: 'scar_truth', requires: { item: 'photo' } },
+      ] },
+      // v2.0.3:疤脸知道自己被监视,他吐露立场:"我也是被淘汰的,只是我学会低着头"
+      scar_truth: { speaker: '疤脸', text: '……（他低声）我弟弟在工厂里上班,出事后再没回来。这疤是被"谈话"时留下的。我接着收钱,只是为了让上面的人别盯着我。你要是继续,就别让我看见。', options: [
+        { label: '我明白', goto: 'bye', setFlag: 'scar_confessed', trust: { npc: 'scar', delta: 1 } },
+      ] },
       bye: { text: '（疤脸眯着眼看你离开。）' },
     },
   },
@@ -262,6 +268,8 @@ export const NPCS: NpcDef[] = [
           { label: '这里到底出了什么事', goto: 'b', setFlag: 'met_foreman' },
           { label: '（查看车间记录）', goto: 'c', setFlag: 'found_record', requires: { flag: 'clue_down' } },
           { label: '（离开）', goto: 'bye' },
+          // v2.0.3: 带 photo + 真相 flag,触发监工认罪分支
+          { label: '（出示烧焦的照片）这照片里的人,你认识吧', goto: 'confess', requires: { item: 'photo', flag: 'truth_photo' } },
         ] },
       b: { speaker: '监工', text: '意外。报告上写得很清楚。你最好别多问。', options: [
           { label: '（接下抉择任务）', goto: 'd', acceptQuest: 'q_factory' },
@@ -270,6 +278,15 @@ export const NPCS: NpcDef[] = [
       c: { speaker: '监工', text: '谁让你动记录的！……算了。你看都看了。', options: [
           { label: '（接下抉择任务）', goto: 'd', acceptQuest: 'q_factory', setFlag: 'truth_evidence' },
         ] },
+      // v2.0.3:监工不再是脸谱反派 — 他知道真相,只是装作不知道
+      confess: { speaker: '监工', text: '……（他点了根烟,手在发抖）那场"意外"我没签字。当时上面来人,我只是……我看着他们把名单上的人带走了。我有老婆孩子。你有本事就公开,别牵连我。', options: [
+        { label: '我替你保密,但你要给我看记录', goto: 'records', trust: { npc: 'foreman', delta: 2 } },
+        { label: '我不会替你瞒', goto: 'bye', setFlag: 'foreman_refused' },
+      ] },
+      // v2.0.3:监工交出真相记录的妥协分支
+      records: { speaker: '监工', text: '……在文件柜第三格,密码是我女儿的生日。0307。', options: [
+        { label: '（记下密码）', goto: 'd', acceptQuest: 'q_factory', setFlag: 'truth_evidence', trust: { npc: 'foreman', delta: 1 } },
+      ] },
       d: { speaker: '监工', text: '三条路：把记录交给我，当没看见；或者，你想当英雄？', options: [
           { label: '（先想想）', goto: 'bye' },
         ] },
@@ -285,14 +302,25 @@ export const NPCS: NpcDef[] = [
           { label: '（松开他）', goto: 'b', setFlag: 'freed_tech' },
           { label: '先告诉我地图在哪', goto: 'c' },
           { label: '（离开）', goto: 'bye' },
+          // v2.0.3 剧情:深层选项 — 玩家已经见过技师,问他身份
+          { label: '你是谁,为什么帮我们', goto: 'identity', requires: { trust: { npc: 'tech', min: 1 } } },
         ] },
       b: { speaker: '技师', text: '够意思。柜子在监工办公室，钥匙在他身上。地图在里面。',
         options: [
           { label: '好', goto: 'bye', setFlag: 'knows_cabinet' },
         ] },
       c: { speaker: '技师', text: '先松开我，再谈条件。', options: [
-          { label: '（离开）', goto: 'bye' },
-        ] },
+        { label: '（离开）', goto: 'bye' },
+      ] },
+      // v2.0.3:技师承认身份 — 他是事故时潜入的调查记者
+      identity: { speaker: '技师', text: '……我是外面来的记者。事故当晚我藏在通风管里。他们不知道我活着。我是来把真相带出去的——不是为了你,是为了还在外面的人。', options: [
+        { label: '那就先把你自己解脱出来', goto: 'b', trust: { npc: 'tech', delta: 1 } },
+        { label: '那你拍的证据呢', goto: 'evidence', requires: { flag: 'freed_tech' } },
+      ] },
+      // v2.0.3:拿到证据后,技师才透露完整真相链
+      evidence: { speaker: '技师', text: '我拍了底片,那是完整的记录——但监工把它和那烧焦的一起埋在柜子里了。你拿到的"照片"是我留下来的一部分。剩下的,你得去地下管网,找到回声,它记得所有的事。', options: [
+        { label: '我明白了', goto: 'bye', setFlag: 'knows_full_evidence' },
+      ] },
       bye: { text: '（技师垂下眼，继续装作在干活。）' },
     },
   },
@@ -342,6 +370,8 @@ export const NPCS: NpcDef[] = [
           { label: '你是谁', goto: 'b' },
           { label: '（聆听）', goto: 'c' },
           { label: '（离开）', goto: 'bye' },
+          // v2.0.3:带照片+回声核心进来,触发"完整真相"分支
+          { label: '（手持真相碎片 + 回声核心）我能听见完整的故事吗', goto: 'full', requires: { item: 'photo' }, attr: { hp: -10 } },
         ] },
       b: { speaker: '回声', text: '我是被删除的那部分。钟、照片、疤、钥匙——所有他们想抹掉的，都在我这里。', options: [
           { label: '我能做什么', goto: 'c' },
@@ -349,6 +379,10 @@ export const NPCS: NpcDef[] = [
       c: { speaker: '回声', text: '带着我的核心出去。让人记得。否则，他们赢了。', options: [
           { label: '（取走回声核心）', goto: 'd', giveItem: 'echo_core', setFlag: 'has_echo_core' },
         ] },
+      // v2.0.3:"完整真相"分支 — 拿到 echo_core 后,带回去这里听到整段事件
+      full: { speaker: '回声', text: '（嗡鸣变强,你的意识里被压进一段记忆——）\n火灾前三个月,42人向外部送出报告。监工拿到名单。事故当夜,只有一人没在场——老吴,因为他提早下班。剩下的人被"优化"。他们让所有家属相信是意外。', options: [
+        { label: '我听到了', goto: 'c', setFlag: 'heard_full_truth' },
+      ] },
       d: { speaker: '回声', text: '……谢谢你，还记得回来。', options: [
           { label: '（离开）', goto: 'bye' },
         ] },

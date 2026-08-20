@@ -21,6 +21,10 @@ export interface DialogOption {
   setFlag?: string;         // 设置剧情/隐藏标记
   giveItem?: string;        // 给予物品
   requires?: Req;
+  // v2.0.3: 单步对话效果 — 让 NPC 在关键节点吐露立场时直接给 trust
+  trust?: { npc?: string; delta: number };
+  // v2.0.3: 单步对话也能扣/加 attr(比如医生 offer 治疗时直接补 hp)
+  attr?: Partial<Record<'hp' | 'stamina' | 'radiation' | 'reputation' | 'scrap', number>>;
 }
 export interface DialogNode {
   speaker?: string;

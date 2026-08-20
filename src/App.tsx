@@ -338,12 +338,26 @@ export default function App() {
         <section className="panel npcs">
           <h2>这里的人</h2>
           {view.npcs.length === 0 && <p className="muted">空无一人。</p>}
-          {view.npcs.map((n) => (
-            <button key={n.id} className="npc" disabled={busy} onClick={() => openNpc(n.id)}>
-              <span className="npc-name">{n.name}</span>
-              <span className="npc-blurb">{n.blurb}</span>
-            </button>
-          ))}
+          {view.npcs.map((n) => {
+            const stance = n.stance || 'neutral';
+            const stanceLabel =
+              stance === 'ally' ? '🟢 潜在帮手' :
+              stance === 'witness' ? '🟡 知情者' :
+              stance === 'hostile' ? '🔴 危险人物' :
+              '⚪ 立场未明';
+            return (
+              <button key={n.id} className={'npc stance-' + stance} disabled={busy} onClick={() => openNpc(n.id)}>
+                <span className="npc-name">{n.name}</span>
+                <span className="npc-blurb">{n.blurb}</span>
+                <span className={'npc-stance stance-' + stance}>{stanceLabel}</span>
+                {typeof n.trust === 'number' && (
+                  <span className="npc-trust" title={'信任度 ' + n.trust + '/5'}>
+                    {'❤'.repeat(n.trust)}{'·'.repeat(Math.max(0, 5 - n.trust))}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </section>
 
         {/* 任务 / 背包 / 进度 */}

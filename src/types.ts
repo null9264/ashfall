@@ -35,7 +35,7 @@ export interface ViewState {
     milestone?: string;
     methods: { id: string; label: string }[];
   }[];
-  npcs: { id: string; name: string; blurb: string; trust?: number }[];
+  npcs: { id: string; name: string; blurb: string; trust?: number; stance?: 'ally' | 'witness' | 'hostile' | 'neutral' }[];
   hiddenFound: string[];
   endings: { available: { id: string; title: string }[]; locked: { id: string; title: string; hint: string }[] };
   ending: string | null;

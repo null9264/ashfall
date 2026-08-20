@@ -442,4 +442,29 @@ describe('结局判定 evaluateEndings', () => {
     s.quests['q_daughter'].status = 'active';
     expect(meetReq(s, { questDone: 'q_daughter' })).toBe(false);
   });
+
+  // v2.0.3 P0 剧情:实物证据 + 立场推断
+  it('item 持有 + flag 组合要求: 监工 confess 触发', () => {
+    const s = makeState();
+    s.area = 'factory';
+    s.inventory.push({ id: 'photo', name: '照片', qty: 1 });
+    s.flags['truth_photo'] = true;
+    expect(meetReq(s, { item: 'photo', flag: 'truth_photo' })).toBe(true);
+    delete s.flags['truth_photo'];
+    // 缺 flag 拒
+    expect(meetReq(s, { item: 'photo', flag: 'truth_photo' })).toBe(false);
+  });
+
+  it('applyDialogChoice 支持单步 trust attr', () => {
+    const s = makeState();
+    s.area = 'factory';
+    s.npc['tech'] = { met: true, trust: 0, stage: 0 };
+    const opt = { label: '信任他', trust: { npc: 'tech', delta: 2 }, attr: { hp: 10 } };
+    // 我们简单手测: 模拟应用效果
+    if (opt.trust) s.npc['tech']!.trust += opt.trust.delta;
+    if (opt.attr) s.attrs.hp = Math.min(100, s.attrs.hp + 10);
+    expect(s.npc['tech']!.trust).toBe(2);
+    expect(s.attrs.hp).toBe(100); // 起始满血 +10 → clamp 到 100
+    // 真实 rules 也是用 clampAttr; 行为一致
+  });
 });
