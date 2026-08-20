@@ -265,7 +265,13 @@ export default function App() {
   // 三重保险：服务端 view.nickname / 本地缓存 / setNickname 入库
   if (!view.nickname) return <NicknameGate onDone={refresh} />;
   if (view.ending && view.endingDetail)
-    return <Ending detail={view.endingDetail} onReset={() => act(async () => api.reset())} />;
+    return <Ending detail={view.endingDetail} onReset={() => act(async () => {
+      const r: any = await api.reset();
+      if (r?.resetInfo?.loop > 1) {
+        toastMsg(`已进入第 ${r.resetInfo.loop} 周目,档案管理员的旧笔记已放入口袋。`, 'good');
+      }
+      return r;
+    })} />;
 
   const openNpc = async (id: string) => {
     try { setDialog(await api.talkStart(id)); }

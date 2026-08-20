@@ -42,8 +42,9 @@ export function getWeatherForDay(day: number): WeatherDef {
 export function applyWeather(s: PlayerState): WeatherDef {
   const day = typeof s.day === 'number' ? s.day : 1;
   const w = getWeatherForDay(day);
-  // 缓存当天的天气 id 到 flags(供事件/对话引用)
-  s.flags[`weather_day_${day}`] = w.id as any;
+  // 不存 flags(类型是 boolean 字典,塞 string 会污染);存到 s.attrs.weather(扩展字段)
+  // 类型上 attrs 没 weather,但 JSON 序列化会保留,且前端只通过 view.weather 读
+  (s.attrs as any).weather = w.id;
   return w;
 }
 

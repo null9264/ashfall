@@ -54,7 +54,7 @@ export const api = {
   poke: (what: string) => req('/api/poke', 'POST', { what }) as Promise<ViewState & { text?: string }>,
   endingList: () => req('/api/ending'),
   endingChoose: (id: string) => req('/api/ending', 'POST', { id }),
-  reset: () => req('/api/reset', 'POST') as Promise<ViewState>,
+  reset: () => req('/api/reset', 'POST') as Promise<ViewState & { resetInfo?: { loop: number; endings_seen: string[] } }>,
   submitFeedback: (data: { category: string; message: string; rating?: number; meta?: any }) =>
     req('/api/feedback', 'POST', data) as Promise<{ ok: true }>,
   // v2.0.2: 数值历史 & 线索日志
