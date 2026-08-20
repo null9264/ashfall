@@ -115,6 +115,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view?.mainProgress]);
 
+  // v2.0.3: 高危区驻留心跳 — 每 10s 通知服务端一次;非危险区服务端 no-op
+  // 只在看得到 view 时才跑,避免登录前空跑
+  useEffect(() => {
+    if (!view || !view.nickname) return;
+    const tick = () => {
+      // 只有当前 area.danger > 0 才上报,否则会被服务端 ignore
+      if ((view.area?.danger ?? 0) > 0) {
+        api.heartbeat().then((v) => {
+          if (!v) return;
+          // 把 hp/radiation 的扣血变化也透给 toast(对比 attrs 变化)
+          setView(v);
+        }).catch((e) => console.error('[heartbeat]', e));
+      }
+    };
+    const handle = setInterval(tick, 10000);
+    return () => clearInterval(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view?.area?.id, view?.area?.danger, !!view?.nickname]);
+
   // 静默暗线提示气泡
   useEffect(() => {
     if (!view?.hint) return;
@@ -285,11 +304,17 @@ export default function App() {
           <h2>{view.area.name}</h2>
           <p className="desc">{view.area.desc}</p>
           {view.area.danger > 0 && (
-            <p className="warn">⚠ 辐射危险区（进入 +{view.area.danger} 辐射 / -{Math.round(view.area.danger / 2)} 生命）</p>
+            <p className="warn">⚠ 辐射危险区(进入 +{view.area.danger} 辐射 / -{Math.round(view.area.danger / 2)} 生命;滞留每 10 秒再加 1 辐射 / -1 生命)</p>
           )}
           <div className="row">
             <button className="act" disabled={busy} onClick={() => act(async () => {
-              const v: any = await api.pickup(''); toastMsg('拾得：' + (v.picked || '无')); return v;
+              const v: any = await api.pickup('');
+              if (v.remaining != null && v.remaining > 0) {
+                toastMsg('拾得：' + (v.picked || '无') + `（这片还剩 ${v.remaining} 样没被搜过）`);
+              } else {
+                toastMsg('拾得：' + (v.picked || '无') + '（这片被翻遍了）');
+              }
+              return v;
             })}>搜寻物资</button>
             <button className="act" disabled={busy} onClick={() => act(async () => {
               const v: any = await api.searchHidden(); toastMsg(v.found ? '发现：' + v.found : '暂时没新发现'); return v;

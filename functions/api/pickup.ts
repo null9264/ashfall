@@ -56,6 +56,13 @@ export async function onRequestPost(context: any) {
     markPicked(s, area, it);
   }
   await saveState(context.env.DB, s);
-  await logEvent(context.env.DB, context.data.playerId, 'pickup', null, { items: fresh });
-  return json({ ...viewState(s, nick, before), picked: fresh.map((i) => ITEMS[i].name).join('、') });
+  await logEvent(context.env.DB, context.data.playerId, 'pickup', null, { items: fresh, area });
+  // v2.0.3: 剩余未拾的 hiddenPickups 数量也告诉前端,让玩家知道"这片还没捡完"
+  const stillFresh = pickups.filter((it) => !isAlreadyPicked(s, area, it));
+  return json({
+    ...viewState(s, nick, before),
+    picked: fresh.map((i) => ITEMS[i].name).join('、'),
+    remaining: stillFresh.length,
+    remainingNames: stillFresh.map((i) => ITEMS[i].name),
+  });
 }

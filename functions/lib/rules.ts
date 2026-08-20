@@ -96,12 +96,43 @@ export function canEnterArea(s: PlayerState, area: AreaId): { ok: boolean; reaso
   if (!def) return { ok: false, reason: '未知区域' };
   if (def.locked && !s.flags[def.unlockFlag!]) return { ok: false, reason: '那里锁着，你还没找到进去的办法。' };
   if (!AREAS[s.area].neighbors.includes(area)) return { ok: false, reason: '你没法直接走到那里，得绕路。' };
+  // v2.0.3 进入 HP 太低禁止进入高危区(避免 1 步送)
+  if ((def.danger ?? 0) > 0 && s.attrs.hp <= 15) {
+    return { ok: false, reason: '身体太虚，进高危区前最好先补充点生命。' };
+  }
   return { ok: true };
 }
 export function applyMove(s: PlayerState, area: AreaId): void {
   s.area = area;
   const d = AREAS[area].danger ?? 0;
-  if (d > 0) { clampAttr(s, 'radiation', d); clampAttr(s, 'hp', -Math.round(d / 2)); }
+  if (d > 0) {
+    // 踏入高危区即刻伤害(老逻辑) + 标记驻留时间戳(新逻辑:心跳会持续扣血)
+    clampAttr(s, 'radiation', d);
+    clampAttr(s, 'hp', -Math.round(d / 2));
+    s.danger_since = Date.now();
+  } else {
+    // 离开高危区,清掉驻留标记
+    s.danger_since = undefined;
+  }
+}
+
+// v2.0.3: 心跳/驻留扣血 — 仅在 state.ts POST heartbeat 时调用
+// 每 tick(默认 10s)在高危区就 -1 HP +1 辐射;离开时清零 danger_since
+export function tickDanger(s: PlayerState, now: number = Date.now()): boolean {
+  const def = AREAS[s.area];
+  if (!def || (def.danger ?? 0) <= 0) {
+    if (s.danger_since !== undefined) s.danger_since = undefined;
+    return false;
+  }
+  if (s.danger_since === undefined) s.danger_since = now;
+  // 至少 10 秒一次才扣,避免前端疯狂请求把玩家扣空
+  const elapsed = Math.floor((now - (s.danger_since ?? now)) / 10000);
+  if (elapsed < 1) return false;
+  clampAttr(s, 'radiation', 1);
+  clampAttr(s, 'hp', -1);
+  // 把 danger_since 推近,这样下次 tick 只算自上次扣血以来的 10 秒
+  s.danger_since = (s.danger_since ?? now) + elapsed * 10000;
+  return true;
 }
 
 // —— 对话 ——

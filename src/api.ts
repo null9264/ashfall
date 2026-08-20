@@ -66,6 +66,8 @@ export const api = {
   // v2.0.3: 玩家手动标记录制某条 tip 已读(可选;服务端默认基于 items 集合自动 dedupe)
   markItemTipSeen: (itemId: string) =>
     req('/api/state', 'POST', { action: 'item_tip_seen', itemId }) as Promise<ViewState>,
+  // v2.0.3: 高危区驻留心跳 — 仅在后端危险区有效,其他地方是空 ack
+  heartbeat: () => req('/api/state', 'POST', { action: 'heartbeat' }) as Promise<ViewState>,
 };
 
 // ===== Admin =====

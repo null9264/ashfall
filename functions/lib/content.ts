@@ -78,10 +78,15 @@ export const NPCS: NpcDef[] = [
         options: [
           { label: '我替你去找', goto: 'b', acceptQuest: 'q_daughter', setFlag: 'met_yun' },
           { label: '节哀', goto: 'bye' },
+          // v2.0.3: trust>=3 解锁的真情隐藏分支 — 之前帮她 / 给过物资才能聊到的内心话
+          { label: '（之前帮忙过）她现在还好吗？', goto: 'warm', requires: { questDone: 'q_daughter', trust: { npc: 'yun', min: 3 } } },
         ] },
       b: { speaker: '阿芸', text: '她左腕有道疤。要是见到她，告诉她妈还在等。', options: [
           { label: '我记住了', goto: 'bye', setFlag: 'clue_yue' },
         ] },
+      warm: { speaker: '阿芸', text: '她比以前开朗了些……谢谢你。如果哪天能找到老吴，林婶也能安心一些。', options: [
+        { label: '我会去居民楼看看', goto: 'bye', setFlag: 'warm_yun' },
+      ] },
       bye: { text: '（阿芸又转回去看城门外的灰。）' },
     },
   },
@@ -109,10 +114,15 @@ export const NPCS: NpcDef[] = [
         options: [
           { label: '我帮你找（接任务）', goto: 'b', acceptQuest: 'q_orphan', setFlag: 'met_manman' },
           { label: '小朋友，先回家吧', goto: 'bye' },
+          // v2.0.3: trust>=4 解锁 — 找回小熊之后才出现,小满愿意见到陌生人
+          { label: '（以后再来找你玩）', goto: 'play', requires: { questDone: 'q_orphan', trust: { npc: 'manman', min: 4 } } },
         ] },
       b: { speaker: '小满', text: '它在工厂那边！我不敢去，那里有坏人。', options: [
           { label: '我去看看', goto: 'bye', setFlag: 'clue_bear' },
         ] },
+      play: { speaker: '小满', text: '哥哥你来啦！我在河岸边发现了一个奇怪符号——一颗星星,藏在地砖下面……', options: [
+        { label: '星星？什么颜色？', goto: 'bye', setFlag: 'clue_star' },
+      ] },
       bye: { text: '（小满蹲回去摆弄石子。）' },
     },
   },

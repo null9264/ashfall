@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   hasItem, addItem, removeItem,
-  meetReq, applyMove, canEnterArea,
+  meetReq, applyMove, canEnterArea, tickDanger,
   canAcceptQuest, canCompleteQuest, completeQuest,
   checkHidden, triggerHidden, evaluateEndings,
 } from '../../functions/lib/rules';
@@ -393,5 +393,53 @@ describe('结局判定 evaluateEndings', () => {
     const r2 = evaluateEndings(s);
     expect(r1.available.length).toBe(r2.available.length);
     expect(r1.locked.length).toBe(r2.locked.length);
+  });
+
+  // v2.0.3 P0 玩法: trust 阈值 / 危险区驻留 / trust 对话节点
+  it('tickDanger 在非危险区清空 danger_since', () => {
+    const s = makeState();
+    s.area = 'gate';
+    s.danger_since = Date.now();
+    tickDanger(s);
+    expect(s.danger_since).toBeUndefined();
+  });
+
+  it('tickDanger 在危险区扣血 + 累辐射(10s 一 tick)', () => {
+    const s = makeState();
+    s.area = 'factory'; // danger > 0
+    s.danger_since = Date.now() - 30000; // 假装停了 30s — 应该有 2 次 tick
+    const hp0 = s.attrs.hp, rad0 = s.attrs.radiation;
+    tickDanger(s);
+    expect(s.attrs.hp).toBeLessThan(hp0);
+    expect(s.attrs.radiation).toBeGreaterThan(rad0);
+  });
+
+  it('canEnterArea 在 HP<=15 拒绝进危险区', () => {
+    const s = makeState();
+    // market 的 neighbor 含 metro (danger 12) — 用 metro 测试低 HP 拒入
+    s.area = 'market';
+    s.attrs.hp = 10;
+    const r = canEnterArea(s, 'metro');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toContain('身体太虚');
+  });
+
+  it('trust 阈值: meetReq {trust:{npc,min:3}} 在 trust=2 时不通过', () => {
+    const s = makeState();
+    s.npc['yun'] = { met: true, trust: 2, stage: 0 };
+    expect(meetReq(s, { trust: { npc: 'yun', min: 3 } })).toBe(false);
+    s.npc['yun'].trust = 3;
+    expect(meetReq(s, { trust: { npc: 'yun', min: 3 } })).toBe(true);
+  });
+
+  it('questDone + trust 复合条件', () => {
+    const s = makeState();
+    s.quests['q_daughter'] = { status: 'done', method: 'm_find' };
+    s.npc['yun'] = { met: true, trust: 3, stage: 0 };
+    expect(meetReq(s, { questDone: 'q_daughter', trust: { npc: 'yun', min: 3 } })).toBe(true);
+    // 少了 questDone
+    expect(meetReq(s, { trust: { npc: 'yun', min: 3 } })).toBe(true); // 只看 trust 也过
+    s.quests['q_daughter'].status = 'active';
+    expect(meetReq(s, { questDone: 'q_daughter' })).toBe(false);
   });
 });
